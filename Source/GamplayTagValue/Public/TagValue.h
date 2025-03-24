@@ -4,7 +4,7 @@
 #include "TagValue.generated.h"
 
 USTRUCT(BlueprintType)
-struct FTagValue
+struct GAMPLAYTAGVALUE_API FTagValue
 {
 	GENERATED_BODY()
 public:
@@ -35,7 +35,7 @@ public:
 
 /** Please add a struct description */
 USTRUCT(BlueprintType)
-struct FTagValueMapping
+struct GAMPLAYTAGVALUE_API FTagValueMapping
 {
 	GENERATED_BODY()
 public:

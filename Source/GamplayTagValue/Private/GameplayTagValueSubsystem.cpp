@@ -222,6 +222,10 @@ bool UGameplayTagValueSubsystem::SetRawValue(FGameplayTag Tag, TSharedPtr<ITagVa
     }
     
     Repository->SetValue(Tag, Value);
+    
+    // Broadcast that the tag value has changed
+    BroadcastTagValueChanged(Tag, Repository->GetRepositoryName());
+    
     return true;
 }
 
@@ -232,7 +236,7 @@ bool UGameplayTagValueSubsystem::RemoveTagValue(FGameplayTag Tag, FName Reposito
         return false;
     }
     
-    bool bRemovedAny = false;
+    bool bAnyRemoved = false;
     
     if (RepositoryName != NAME_None)
     {
@@ -241,7 +245,10 @@ bool UGameplayTagValueSubsystem::RemoveTagValue(FGameplayTag Tag, FName Reposito
         if (Repository.IsValid() && Repository->HasValue(Tag))
         {
             Repository->RemoveValue(Tag);
-            bRemovedAny = true;
+            bAnyRemoved = true;
+            
+            // Broadcast that the tag value has changed
+            BroadcastTagValueChanged(Tag, RepositoryName);
         }
     }
     else
@@ -252,12 +259,15 @@ bool UGameplayTagValueSubsystem::RemoveTagValue(FGameplayTag Tag, FName Reposito
             if (Repository->HasValue(Tag))
             {
                 Repository->RemoveValue(Tag);
-                bRemovedAny = true;
+                bAnyRemoved = true;
+                
+                // Broadcast that the tag value has changed
+                BroadcastTagValueChanged(Tag, Repository->GetRepositoryName());
             }
         }
     }
     
-    return bRemovedAny;
+    return bAnyRemoved;
 }
 
 void UGameplayTagValueSubsystem::ClearAllValues(FName RepositoryName)
@@ -268,7 +278,16 @@ void UGameplayTagValueSubsystem::ClearAllValues(FName RepositoryName)
         TSharedPtr<ITagValueRepository> Repository = GetRepository(RepositoryName);
         if (Repository.IsValid())
         {
+            // Get all tags before clearing so we can broadcast changes
+            TArray<FGameplayTag> Tags = Repository->GetAllTags();
+            
             Repository->ClearAllValues();
+            
+            // Broadcast that all tag values have changed
+            for (const FGameplayTag& Tag : Tags)
+            {
+                BroadcastTagValueChanged(Tag, RepositoryName);
+            }
         }
     }
     else
@@ -276,25 +295,27 @@ void UGameplayTagValueSubsystem::ClearAllValues(FName RepositoryName)
         // Clear all repositories
         for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
         {
+            // Get all tags before clearing so we can broadcast changes
+            TArray<FGameplayTag> Tags = Repository->GetAllTags();
+            FName RepoName = Repository->GetRepositoryName();
+            
             Repository->ClearAllValues();
+            
+            // Broadcast that all tag values have changed
+            for (const FGameplayTag& Tag : Tags)
+            {
+                BroadcastTagValueChanged(Tag, RepoName);
+            }
         }
     }
 }
 
-TArray<FGameplayTag> UGameplayTagValueSubsystem::GetAllTags() const
+void UGameplayTagValueSubsystem::BroadcastTagValueChanged(FGameplayTag Tag, FName RepositoryName)
 {
-    TSet<FGameplayTag> UniqueTagsSet;
-    
-    // Collect tags from all repositories
-    for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
+    if (OnTagValueChanged.IsBound())
     {
-        TArray<FGameplayTag> RepositoryTags = Repository->GetAllTags();
-        UniqueTagsSet.Append(RepositoryTags);
+        OnTagValueChanged.Broadcast(Tag, RepositoryName);
     }
-    
-    TArray<FGameplayTag> Result;
-    UniqueTagsSet.GetKeys(Result);
-    return Result;
 }
 
 int32 UGameplayTagValueSubsystem::ImportFromDataTable(UDataTable* DataTable, FName RepositoryName)
@@ -510,6 +531,19 @@ FSoftObjectPath UGameplayTagValueSubsystem::GetObjectValue(FGameplayTag Tag, con
 bool UGameplayTagValueSubsystem::SetObjectValue(FGameplayTag Tag, const FSoftObjectPath& Value, FName RepositoryName)
 {
     return SetTypedValue<FSoftObjectPath>(Tag, Value, RepositoryName);
+}
+
+template<typename T>
+bool UGameplayTagValueSubsystem::SetTypedValue(FGameplayTag Tag, const T& Value, FName RepositoryName)
+{
+    if (!Tag.IsValid())
+    {
+        return false;
+    }
+    
+    TSharedPtr<TTagValueHolder<T>> TypedValue = MakeShared<TTagValueHolder<T>>(Value);
+    return SetRawValue(Tag, TypedValue, RepositoryName);
+    // Note: No need to broadcast here as SetRawValue already does it
 }
 
 //------------------------------------------------------------------------------

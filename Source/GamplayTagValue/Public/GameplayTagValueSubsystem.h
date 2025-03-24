@@ -11,6 +11,13 @@
 class UGameplayTagValueDataAsset;
 
 /**
+ * Delegate for when a tag value changes
+ * @param Tag The tag that changed
+ * @param RepositoryName The repository where the change occurred
+ */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTagValueChanged, FGameplayTag, Tag, FName, RepositoryName);
+
+/**
  * Memory-based repository implementation for storing tag values in memory
  */
 class GAMPLAYTAGVALUE_API FMemoryTagValueRepository : public ITagValueRepository
@@ -53,6 +60,13 @@ public:
     // USubsystem interface
     virtual void Initialize(FSubsystemCollectionBase& Collection) override;
     virtual void Deinitialize() override;
+    
+    /**
+     * Event triggered when a tag value changes (set, removed, or cleared)
+     * Provides the tag that changed and the repository name where the change occurred
+     */
+    UPROPERTY(BlueprintAssignable, Category = "Gameplay Tags|Values")
+    FOnTagValueChanged OnTagValueChanged;
     
     /**
      * Register a repository with the subsystem
@@ -273,6 +287,14 @@ public:
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
     int32 RegisterConfiguredDataAssets();
+    
+    /**
+     * Broadcast that a tag value has changed
+     * @param Tag The tag that changed
+     * @param RepositoryName The repository where the change occurred
+     */
+    UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+    void BroadcastTagValueChanged(FGameplayTag Tag, FName RepositoryName);
     
 private:
     /** The default repository name */
