@@ -3,9 +3,9 @@
 	"Version": 1,
 	"VersionName": "1.0",
 	"FriendlyName": "GamplayTagValue",
-	"Description": "",
-	"Category": "Other",
-	"CreatedBy": "Hung",
+	"Description": "A system for associating arbitrary values with GameplayTags, supporting type-safe storage, hierarchical inheritance, and contextual values through interfaces.",
+	"Category": "Gameplay",
+	"CreatedBy": "Nguyen Phi Hung",
 	"CreatedByURL": "",
 	"DocsURL": "",
 	"MarketplaceURL": "",
@@ -18,7 +18,13 @@
 		{
 			"Name": "GamplayTagValue",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "PreDefault"
 		}
-		]
+	],
+	"Plugins": [
+		{
+			"Name": "GameplayTagsEditor",
+			"Enabled": true
+		}
+	]
 }

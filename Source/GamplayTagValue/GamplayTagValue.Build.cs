@@ -26,7 +26,8 @@ public class GamplayTagValue : ModuleRules
 			new string[]
 			{
 				"Core",
-				"GameplayTags"
+				"GameplayTags",
+				"DeveloperSettings"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -39,6 +40,9 @@ public class GamplayTagValue : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+				"InputCore",
+				"Json",
+				"JsonUtilities"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
