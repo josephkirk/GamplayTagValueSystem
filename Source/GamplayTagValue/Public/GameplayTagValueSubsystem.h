@@ -14,8 +14,10 @@ class UGameplayTagValueDataAsset;
  * Delegate for when a tag value changes
  * @param Tag The tag that changed
  * @param RepositoryName The repository where the change occurred
+ * @param OldValue The previous value (may be null if no previous value existed)
+ * @param NewValue The new value (may be null if the value was removed)
  */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTagValueChanged, FGameplayTag, Tag, FName, RepositoryName);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnTagValueChanged, FGameplayTag, Tag, FName, RepositoryName, const TSharedPtr<ITagValueHolder>&, OldValue, const TSharedPtr<ITagValueHolder>&, NewValue);
 
 /**
  * Memory-based repository implementation for storing tag values in memory
@@ -292,9 +294,11 @@ public:
      * Broadcast that a tag value has changed
      * @param Tag The tag that changed
      * @param RepositoryName The repository where the change occurred
+     * @param OldValue The previous value (may be null if no previous value existed)
+     * @param NewValue The new value (may be null if the value was removed)
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    void BroadcastTagValueChanged(FGameplayTag Tag, FName RepositoryName);
+    void BroadcastTagValueChanged(FGameplayTag Tag, FName RepositoryName, const TSharedPtr<ITagValueHolder>& OldValue = nullptr, const TSharedPtr<ITagValueHolder>& NewValue = nullptr);
     
 private:
     /** The default repository name */
