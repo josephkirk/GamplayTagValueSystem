@@ -1,0 +1,96 @@
+# Unreal Engine files
+Binaries/
+Build/
+Debug/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vscode/
+.vs/
+*.VC.db
+*.opensdf
+*.opendb
+*.sdf
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+*.code-workspace
+
+# Visual Studio files
+*.aps
+*.pch
+*.vspscc
+*_i.c
+*_p.c
+*.ncb
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.log
+*.lib
+*.sbr
+*.obj
+*.pdb
+*.idb
+*.ipdb
+*.iobj
+*.user
+*.userosscache
+*.VC.db
+*.VC.opendb
+ipch/
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Plugin specific
+Plugins/*/Binaries/
+Plugins/*/Intermediate/
+
+# Content folders that might contain large binary files
+Content/StarterContent/
+Content/Collections/
+
+# Packaging
+Packaged/
+
+# Other
+*.swp
+*.bak
+*~
+*.tmp

@@ -1,0 +1,161 @@
+[
+	{
+		"Name": "NewRow",
+		"Tag":
+		{
+			"TagName": "Mover.IsOnGround"
+		},
+		"Value":
+		{
+			"BoolValue": false,
+			"IntegerValue": 0,
+			"FloatValue": 0,
+			"TransformValue":
+			{
+				"Rotation":
+				{
+					"X": 0,
+					"Y": -0,
+					"Z": 0,
+					"W": 1
+				},
+				"Translation":
+				{
+					"X": 0,
+					"Y": 0,
+					"Z": 0
+				},
+				"Scale3D":
+				{
+					"X": 1,
+					"Y": 1,
+					"Z": 1
+				}
+			},
+			"ClassValue":
+			{
+				"AssetPath":
+				{
+					"PackageName": "/Script/GameplayAbilities",
+					"AssetName": "AbilityTask_ApplyRootMotionJumpForce"
+				},
+				"SubPathString": ""
+			},
+			"ObjectValue":
+			{
+				"AssetPath":
+				{
+					"PackageName": "/Game/Characters/Echo/Rigs/ABP_Echo_Hair",
+					"AssetName": "ABP_Echo_Hair"
+				},
+				"SubPathString": ""
+			}
+		}
+	},
+	{
+		"Name": "NewRow_0",
+		"Tag":
+		{
+			"TagName": "None"
+		},
+		"Value":
+		{
+			"BoolValue": false,
+			"IntegerValue": 0,
+			"FloatValue": 0,
+			"TransformValue":
+			{
+				"Rotation":
+				{
+					"X": 0,
+					"Y": -0,
+					"Z": 0,
+					"W": 1
+				},
+				"Translation":
+				{
+					"X": 0,
+					"Y": 0,
+					"Z": 0
+				},
+				"Scale3D":
+				{
+					"X": 1,
+					"Y": 1,
+					"Z": 1
+				}
+			},
+			"ClassValue":
+			{
+				"AssetPath":
+				{
+					"PackageName": "None",
+					"AssetName": "None"
+				},
+				"SubPathString": ""
+			},
+			"ObjectValue":
+			{
+				"AssetPath":
+				{
+					"PackageName": "None",
+					"AssetName": "None"
+				},
+				"SubPathString": ""
+			}
+		}
+	},
+	{
+		"Name": "NewRow_1",
+		"Tag":
+		{
+			"TagName": "None"
+		},
+		"Value":
+		{
+			"BoolValue": false,
+			"IntegerValue": 0,
+			"FloatValue": 0,
+			"TransformValue":
+			{
+				"Rotation":
+				{
+					"X": 0,
+					"Y": -0,
+					"Z": 0,
+					"W": 1
+				},
+				"Translation":
+				{
+					"X": 0,
+					"Y": 0,
+					"Z": 0
+				},
+				"Scale3D":
+				{
+					"X": 1,
+					"Y": 1,
+					"Z": 1
+				}
+			},
+			"ClassValue":
+			{
+				"AssetPath":
+				{
+					"PackageName": "None",
+					"AssetName": "None"
+				},
+				"SubPathString": ""
+			},
+			"ObjectValue":
+			{
+				"AssetPath":
+				{
+					"PackageName": "None",
+					"AssetName": "None"
+				},
+				"SubPathString": ""
+			}
+		}
+	}
+]
