@@ -1,6 +1,7 @@
-
 #include "GameplayTagValueSubsystem.h"
 #include "Engine/DataTable.h"
+#include "GameplayTagValueDataAsset.h"
+#include "Kismet/GameplayStatics.h"
 
 // Static member initialization
 const FName UGameplayTagValueSubsystem::DefaultRepositoryName = TEXT("Default");
@@ -73,6 +74,9 @@ void UGameplayTagValueSubsystem::Initialize(FSubsystemCollectionBase& Collection
     // Create the default repository
     TSharedPtr<FMemoryTagValueRepository> DefaultRepository = MakeShared<FMemoryTagValueRepository>(DefaultRepositoryName, DefaultRepositoryPriority);
     RegisterRepository(DefaultRepository);
+    
+    // Register any configured data assets
+    RegisterConfiguredDataAssets();
 }
 
 void UGameplayTagValueSubsystem::Deinitialize()
@@ -687,3 +691,28 @@ template double UGameplayTagValueSubsystem::GetTypedValue<double>(FGameplayTag, 
 template FTransform UGameplayTagValueSubsystem::GetTypedValue<FTransform>(FGameplayTag, const FTransform&, UObject*) const;
 template FSoftClassPath UGameplayTagValueSubsystem::GetTypedValue<FSoftClassPath>(FGameplayTag, const FSoftClassPath&, UObject*) const;
 template FSoftObjectPath UGameplayTagValueSubsystem::GetTypedValue<FSoftObjectPath>(FGameplayTag, const FSoftObjectPath&, UObject*) const;
+
+int32 UGameplayTagValueSubsystem::RegisterConfiguredDataAssets()
+{
+    int32 RegisteredCount = 0;
+    
+    // Find all GameplayTagValueDataAsset objects
+    TArray<UGameplayTagValueDataAsset*> DataAssets;
+    for (TObjectIterator<UGameplayTagValueDataAsset> It; It; ++It)
+    {
+        UGameplayTagValueDataAsset* DataAsset = *It;
+        if (DataAsset && !DataAsset->IsPendingKill() && DataAsset->bRegisterToGameplayTagValueSubsystem)
+        {
+            // Register this data asset
+            int32 ImportedCount = DataAsset->RegisterToSubsystem(this);
+            if (ImportedCount > 0)
+            {
+                RegisteredCount++;
+                UE_LOG(LogTemp, Log, TEXT("Auto-registered GameplayTagValueDataAsset '%s' with %d values"), 
+                    *DataAsset->GetName(), ImportedCount);
+            }
+        }
+    }
+    
+    return RegisteredCount;
+}

@@ -7,6 +7,9 @@
 #include "TagValue.h"
 #include "GameplayTagValueSubsystem.generated.h"
 
+// Forward declaration
+class UGameplayTagValueDataAsset;
+
 /**
  * Memory-based repository implementation for storing tag values in memory
  */
@@ -226,7 +229,7 @@ public:
      * Remove a value for the given tag
      * @param Tag The tag to remove the value for
      * @param RepositoryName Optional repository name to target (removes from all if not specified)
-     * @return True if any values were removed
+     * @return True if the value was removed successfully
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
     bool RemoveTagValue(FGameplayTag Tag, FName RepositoryName = NAME_None);
@@ -249,7 +252,7 @@ public:
      * Import tag values from a data table
      * @param DataTable The data table to import from
      * @param RepositoryName Optional repository name to target (uses default if not specified)
-     * @return Number of values imported
+     * @return Number of tag-value pairs imported
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
     int32 ImportFromDataTable(UDataTable* DataTable, FName RepositoryName = NAME_None);
@@ -258,23 +261,28 @@ public:
      * Export tag values to a data table
      * @param DataTable The data table to export to
      * @param RepositoryName Optional repository name to target (exports from all if not specified)
-     * @return Number of values exported
+     * @return Number of tag-value pairs exported
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
     int32 ExportToDataTable(UDataTable* DataTable, FName RepositoryName = NAME_None);
+    
+    /**
+     * Register all GameplayTagValueDataAssets that are configured to auto-register
+     * This is called automatically during initialization
+     * @return Number of data assets registered
+     */
+    UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+    int32 RegisterConfiguredDataAssets();
     
 private:
     /** The default repository name */
     static const FName DefaultRepositoryName;
     
-    /** The default repository priority */
-    static const int32 DefaultRepositoryPriority;
-    
-    /** All registered repositories, sorted by priority */
+    /** The repositories, sorted by priority */
     TArray<TSharedPtr<ITagValueRepository>> Repositories;
     
     /** Get the best repository for setting values */
-    TSharedPtr<ITagValueRepository> GetBestRepository(FName RepositoryName) const;
+    TSharedPtr<ITagValueRepository> GetBestRepository(FName RepositoryName = NAME_None) const;
     
     /** Check if an object implements the UTagValueInterface */
     bool ImplementsTagValueInterface(UObject* Object) const;
