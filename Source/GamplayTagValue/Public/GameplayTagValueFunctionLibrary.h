@@ -40,10 +40,11 @@ public:
      * @param Tag The tag to get the value for
      * @param DefaultValue The default value to return if the tag is not found
      * @param Context Optional context object that implements UTagValueInterface
+     * @param bSuccess Output parameter indicating if the tag had a valid value
      * @return The bool value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static bool GetBoolTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool DefaultValue = false, UObject* Context = nullptr);
+    static bool GetBoolTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool DefaultValue = false, UObject* Context = nullptr, bool& bSuccess = false);
     
     /**
      * Set a bool value for the given tag
@@ -62,10 +63,11 @@ public:
      * @param Tag The tag to get the value for
      * @param DefaultValue The default value to return if the tag is not found
      * @param Context Optional context object that implements UTagValueInterface
+     * @param bSuccess Output parameter indicating if the tag had a valid value
      * @return The integer value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static int32 GetIntTagValue(const UObject* WorldContextObject, FGameplayTag Tag, int32 DefaultValue = 0, UObject* Context = nullptr);
+    static int32 GetIntTagValue(const UObject* WorldContextObject, FGameplayTag Tag, int32 DefaultValue = 0, UObject* Context = nullptr, bool& bSuccess = false);
     
     /**
      * Set an integer value for the given tag
@@ -84,10 +86,11 @@ public:
      * @param Tag The tag to get the value for
      * @param DefaultValue The default value to return if the tag is not found
      * @param Context Optional context object that implements UTagValueInterface
+     * @param bSuccess Output parameter indicating if the tag had a valid value
      * @return The float value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static float GetFloatTagValue(const UObject* WorldContextObject, FGameplayTag Tag, float DefaultValue = 0.0f, UObject* Context = nullptr);
+    static float GetFloatTagValue(const UObject* WorldContextObject, FGameplayTag Tag, float DefaultValue = 0.0f, UObject* Context = nullptr, bool& bSuccess = false);
     
     /**
      * Set a float value for the given tag
@@ -106,10 +109,11 @@ public:
      * @param Tag The tag to get the value for
      * @param DefaultValue The default value to return if the tag is not found
      * @param Context Optional context object that implements UTagValueInterface
+     * @param bSuccess Output parameter indicating if the tag had a valid value
      * @return The transform value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static FTransform GetTransformTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FTransform& DefaultValue, UObject* Context = nullptr);
+    static FTransform GetTransformTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FTransform& DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
     
     /**
      * Set a transform value for the given tag
@@ -128,10 +132,11 @@ public:
      * @param Tag The tag to get the value for
      * @param DefaultValue The default value to return if the tag is not found
      * @param Context Optional context object that implements UTagValueInterface
+     * @param bSuccess Output parameter indicating if the tag had a valid value
      * @return The class value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static TSoftClassPtr<UObject> GetClassTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue, UObject* Context = nullptr);
+    static TSoftClassPtr<UObject> GetClassTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
     
     /**
      * Set a class value for the given tag
@@ -150,10 +155,11 @@ public:
      * @param Tag The tag to get the value for
      * @param DefaultValue The default value to return if the tag is not found
      * @param Context Optional context object that implements UTagValueInterface
+     * @param bSuccess Output parameter indicating if the tag had a valid value
      * @return The object value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static TSoftObjectPtr<UObject> GetObjectTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue, UObject* Context = nullptr);
+    static TSoftObjectPtr<UObject> GetObjectTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
     
     /**
      * Set an object value for the given tag
