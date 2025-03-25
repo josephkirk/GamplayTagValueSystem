@@ -13,6 +13,7 @@ The GameplayTag Value System extends Unreal Engine's GameplayTags with the abili
   - Class references (via FSoftClassPath)
   - Object references (via FSoftObjectPath)
 - **Repository pattern** for flexible storage backends
+- **Actor Component implementation** for easy integration with actors
 - **Hierarchical tag inheritance** for logical data organization
 - **Contextual tag values** via UTagValueInterface for actor-specific overrides
 - **Data Table integration** for configuration-driven workflows
@@ -33,6 +34,7 @@ The GameplayTag Value System extends Unreal Engine's GameplayTags with the abili
 - Implementation of ITagValueRepository interface
 - Handles storage and retrieval of tag values
 - Memory-based implementation (FMemoryTagValueRepository)
+- Component-based implementation (UTagValueRepositoryComponent)
 - Prioritization system for repository chain
 
 #### TagValueHolder
@@ -66,11 +68,13 @@ The GameplayTag Value System extends Unreal Engine's GameplayTags with the abili
             |                     |     |                        |
             +---------------------+     +------------------------+
                        |
-                +------v------+
-                |             |
-                | Memory Repo |
-                |             |
-                +-------------+
+        +---------------+---------------+
+        |                               |
++-------v-------+           +-----------v---------+
+|               |           |                     |
+| Memory Repo   |           | Component Repo      |
+|               |           |                     |
++---------------+           +---------------------+
 ```
 
 ## Usage
@@ -114,6 +118,26 @@ int32 ContextHealth = Subsystem->GetIntValue(
 2. Use the Blueprint function library to get/set tag values
 3. Implement UTagValueInterface on actors or components for contextual values
 4. Use data assets to configure and load tag values from data tables
+5. Add TagValueRepositoryComponent to actors to store tag values directly
+
+### Using TagValueRepositoryComponent
+
+```cpp
+// Add the component to an actor
+UTagValueRepositoryComponent* TagRepo = MyActor->CreateDefaultSubobject<UTagValueRepositoryComponent>(TEXT("TagValueRepository"));
+
+// Configure the component
+TagRepo->RepositoryName = FName(TEXT("MyActorRepository"));
+TagRepo->Priority = 100;
+TagRepo->bRegisterToSubsystem = true;
+
+// Add tag values directly
+FTagValue BoolValue;
+BoolValue.BoolValue = true;
+TagRepo->SetTagValueMapping(FGameplayTag::RequestGameplayTag("MyActor.CanJump"), BoolValue);
+
+// Or in Blueprint, add the component and configure tag values in the editor
+```
 
 ### Data Table Integration
 
@@ -146,6 +170,32 @@ public:
     virtual FSoftClassPath GetClassValue(FGameplayTag Tag, const FSoftClassPath& DefaultValue = FSoftClassPath()) const override;
     virtual FSoftObjectPath GetObjectValue(FGameplayTag Tag, const FSoftObjectPath& DefaultValue = FSoftObjectPath()) const override;
 };
+```
+
+## Repository Options
+
+### Memory Repository
+
+The default memory repository provides a simple in-memory storage for tag values:
+
+```cpp
+// Create a memory repository
+TSharedPtr<FMemoryTagValueRepository> MemoryRepo = MakeShared<FMemoryTagValueRepository>(FName(TEXT("MyMemoryRepo")), 100);
+
+// Register with the subsystem
+Subsystem->RegisterRepository(MemoryRepo);
+```
+
+### Component Repository
+
+The TagValueRepositoryComponent provides an actor component implementation of the repository interface:
+
+```cpp
+// Add the component in C++
+UTagValueRepositoryComponent* TagRepo = MyActor->CreateDefaultSubobject<UTagValueRepositoryComponent>(TEXT("TagValueRepository"));
+
+// Or add it in the editor to any actor
+// The component will automatically register with the subsystem on BeginPlay if bRegisterToSubsystem is true
 ```
 
 ## Data Flow
