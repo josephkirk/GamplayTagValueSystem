@@ -54,6 +54,7 @@
   - [ ] Value type conversion tests
   - [ ] Data table import/export tests
   - [ ] Memory management tests
+  - [ ] Repository hierarchy tests
 
 ### Day 3: Performance Optimization 
 - [ ] Profile and optimize
@@ -61,6 +62,7 @@
   - [ ] Memory usage analysis
   - [ ] Container resizing strategy
   - [ ] Cache optimization
+  - [ ] Repository lookup optimization
 
 ### Day 4: Documentation 
 - [x] Write technical documentation
@@ -103,12 +105,36 @@
   - [ ] Repository access optimization
   - [ ] Memory usage analysis
   - [ ] Cache optimization for frequently accessed tags
+  - [ ] Benchmark different repository implementations
 
 ### Additional Repository Types
 - [ ] Implement additional repository types
   - [ ] SaveGame repository
   - [ ] Config file repository
   - [ ] Custom backend repository
+  - [ ] Database-backed repository
+
+### New Value Types Support
+- [ ] Implement additional value types
+  - [ ] String values
+  - [ ] Vector/Rotator values
+  - [ ] Color values
+  - [ ] Array/Map container support
+  - [ ] Custom struct support
+
+## Phase 6: Quality of Life Improvements
+
+### Editor Tools
+- [ ] Create tag value editor tools
+  - [ ] Custom property editor
+  - [ ] Tag value debugger
+  - [ ] Value visualization widgets
+
+### Blueprint Integration
+- [ ] Enhance blueprint support
+  - [ ] More blueprint nodes for common operations
+  - [ ] Visual feedback for tag values in editor
+  - [ ] Blueprint function library improvements
 
 ## Future Tasks
 
@@ -118,12 +144,6 @@
   - [ ] Add RPC functions
   - [ ] Implement delta compression
   - [ ] Add authority/ownership model
-
-### Editor Tools
-- [ ] Tag value debugger
-  - [ ] Visual editor integration
-  - [ ] Runtime inspector
-  - [ ] Value visualization
 
 ### Integration with Other Systems
 - [ ] Gameplay Ability System integration
