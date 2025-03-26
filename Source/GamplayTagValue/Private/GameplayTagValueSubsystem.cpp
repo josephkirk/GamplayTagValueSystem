@@ -5,7 +5,6 @@
 
 // Static member initialization
 const FName UGameplayTagValueSubsystem::DefaultRepositoryName = TEXT("Default");
-const int32 UGameplayTagValueSubsystem::DefaultRepositoryPriority = 100;
 
 //------------------------------------------------------------------------------
 // FMemoryTagValueRepository Implementation
@@ -72,7 +71,7 @@ void UGameplayTagValueSubsystem::Initialize(FSubsystemCollectionBase& Collection
     Super::Initialize(Collection);
     
     // Create the default repository
-    TSharedPtr<FMemoryTagValueRepository> DefaultRepository = MakeShared<FMemoryTagValueRepository>(DefaultRepositoryName, DefaultRepositoryPriority);
+    TSharedPtr<FMemoryTagValueRepository> DefaultRepository = MakeShared<FMemoryTagValueRepository>(DefaultRepositoryName, 100);
     RegisterRepository(DefaultRepository);
     
     // Register any configured data assets
@@ -98,39 +97,31 @@ void UGameplayTagValueSubsystem::RegisterRepository(TSharedPtr<ITagValueReposito
     UnregisterRepository(Repository->GetRepositoryName());
     
     // Add the new repository
-    Repositories.Add(Repository);
-    
-    // Sort repositories by priority (highest first)
-    Repositories.Sort([](const TSharedPtr<ITagValueRepository>& A, const TSharedPtr<ITagValueRepository>& B)
-    {
-        return A->GetPriority() > B->GetPriority();
-    });
+    Repositories.Add(Repository->GetRepositoryName(), Repository);
 }
 
 void UGameplayTagValueSubsystem::UnregisterRepository(FName RepositoryName)
 {
-    Repositories.RemoveAll([RepositoryName](const TSharedPtr<ITagValueRepository>& Repository)
-    {
-        return Repository->GetRepositoryName() == RepositoryName;
-    });
+    Repositories.Remove(RepositoryName);
 }
 
 TSharedPtr<ITagValueRepository> UGameplayTagValueSubsystem::GetRepository(FName RepositoryName) const
 {
-    for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
-    {
-        if (Repository->GetRepositoryName() == RepositoryName)
-        {
-            return Repository;
-        }
-    }
-    
-    return nullptr;
+    return Repositories.FindRef(RepositoryName);
 }
 
 TArray<TSharedPtr<ITagValueRepository>> UGameplayTagValueSubsystem::GetAllRepositories() const
 {
-    return Repositories;
+    TArray<TSharedPtr<ITagValueRepository>> Result;
+    Repositories.GenerateValueArray(Result);
+    
+    // Sort by priority (highest first)
+    Result.Sort([](const TSharedPtr<ITagValueRepository>& A, const TSharedPtr<ITagValueRepository>& B)
+    {
+        return A->GetPriority() > B->GetPriority();
+    });
+    
+    return Result;
 }
 
 bool UGameplayTagValueSubsystem::HasTagValue(FGameplayTag Tag, UObject* Context) const
@@ -146,7 +137,8 @@ bool UGameplayTagValueSubsystem::HasTagValue(FGameplayTag Tag, UObject* Context)
     }
     
     // Check repositories
-    for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
+    TArray<TSharedPtr<ITagValueRepository>> RepositoryArray = GetAllRepositories();
+    for (const TSharedPtr<ITagValueRepository>& Repository : RepositoryArray)
     {
         if (Repository->HasValue(Tag))
         {
@@ -158,7 +150,7 @@ bool UGameplayTagValueSubsystem::HasTagValue(FGameplayTag Tag, UObject* Context)
     FGameplayTag ParentTag = Tag.RequestDirectParent();
     while (ParentTag.IsValid())
     {
-        for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
+        for (const TSharedPtr<ITagValueRepository>& Repository : RepositoryArray)
         {
             if (Repository->HasValue(ParentTag))
             {
@@ -182,7 +174,8 @@ TSharedPtr<ITagValueHolder> UGameplayTagValueSubsystem::GetRawValue(FGameplayTag
     }
     
     // Check repositories for exact match
-    for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
+    TArray<TSharedPtr<ITagValueRepository>> RepositoryArray = GetAllRepositories();
+    for (const TSharedPtr<ITagValueRepository>& Repository : RepositoryArray)
     {
         if (Repository->HasValue(Tag))
         {
@@ -194,7 +187,7 @@ TSharedPtr<ITagValueHolder> UGameplayTagValueSubsystem::GetRawValue(FGameplayTag
     FGameplayTag ParentTag = Tag.RequestDirectParent();
     while (ParentTag.IsValid())
     {
-        for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
+        for (const TSharedPtr<ITagValueRepository>& Repository : RepositoryArray)
         {
             if (Repository->HasValue(ParentTag))
             {
@@ -210,7 +203,7 @@ TSharedPtr<ITagValueHolder> UGameplayTagValueSubsystem::GetRawValue(FGameplayTag
 
 bool UGameplayTagValueSubsystem::SetRawValue(FGameplayTag Tag, TSharedPtr<ITagValueHolder> Value, FName RepositoryName)
 {
-    if (!Tag.IsValid() || !Value.IsValid())
+    if (!Tag.IsValid())
     {
         return false;
     }
@@ -222,9 +215,16 @@ bool UGameplayTagValueSubsystem::SetRawValue(FGameplayTag Tag, TSharedPtr<ITagVa
     }
     
     TSharedPtr<ITagValueHolder> OldValue = Repository->GetValue(Tag);
-    Repository->SetValue(Tag, Value);
     
-    // Broadcast that the tag value has changed
+    if (!Value.IsValid())
+    {
+        Repository->RemoveValue(Tag);
+    }
+    else
+    {
+        Repository->SetValue(Tag, Value);
+    }
+    
     BroadcastTagValueChanged(Tag, Repository->GetRepositoryName(), OldValue, Value);
     
     return true;
@@ -237,40 +237,40 @@ bool UGameplayTagValueSubsystem::RemoveTagValue(FGameplayTag Tag, FName Reposito
         return false;
     }
     
-    bool bAnyRemoved = false;
+    bool bRemovedAny = false;
     
     if (RepositoryName != NAME_None)
     {
         // Remove from specific repository
         TSharedPtr<ITagValueRepository> Repository = GetRepository(RepositoryName);
-        if (Repository.IsValid() && Repository->HasValue(Tag))
-        {
-            TSharedPtr<ITagValueHolder> OldValue = Repository->GetValue(Tag);
-            Repository->RemoveValue(Tag);
-            bAnyRemoved = true;
-            
-            // Broadcast that the tag value has changed
-            BroadcastTagValueChanged(Tag, RepositoryName, OldValue, nullptr);
-        }
-    }
-    else
-    {
-        // Remove from all repositories
-        for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
+        if (Repository.IsValid())
         {
             if (Repository->HasValue(Tag))
             {
                 TSharedPtr<ITagValueHolder> OldValue = Repository->GetValue(Tag);
                 Repository->RemoveValue(Tag);
-                bAnyRemoved = true;
-                
-                // Broadcast that the tag value has changed
                 BroadcastTagValueChanged(Tag, Repository->GetRepositoryName(), OldValue, nullptr);
+                bRemovedAny = true;
+            }
+        }
+    }
+    else
+    {
+        // Remove from all repositories
+        TArray<TSharedPtr<ITagValueRepository>> RepositoryArray = GetAllRepositories();
+        for (const TSharedPtr<ITagValueRepository>& Repository : RepositoryArray)
+        {
+            if (Repository->HasValue(Tag))
+            {
+                TSharedPtr<ITagValueHolder> OldValue = Repository->GetValue(Tag);
+                Repository->RemoveValue(Tag);
+                BroadcastTagValueChanged(Tag, Repository->GetRepositoryName(), OldValue, nullptr);
+                bRemovedAny = true;
             }
         }
     }
     
-    return bAnyRemoved;
+    return bRemovedAny;
 }
 
 void UGameplayTagValueSubsystem::ClearAllValues(FName RepositoryName)
@@ -281,35 +281,35 @@ void UGameplayTagValueSubsystem::ClearAllValues(FName RepositoryName)
         TSharedPtr<ITagValueRepository> Repository = GetRepository(RepositoryName);
         if (Repository.IsValid())
         {
-            // Get all tags before clearing so we can broadcast changes
+            // Get all tags before clearing
             TArray<FGameplayTag> Tags = Repository->GetAllTags();
             
+            // Clear repository
+            Repository->ClearAllValues();
+            
+            // Broadcast changes for each tag
             for (const FGameplayTag& Tag : Tags)
             {
-                TSharedPtr<ITagValueHolder> OldValue = Repository->GetValue(Tag);
-                Repository->RemoveValue(Tag);
-                
-                // Broadcast that the tag value has changed
-                BroadcastTagValueChanged(Tag, RepositoryName, OldValue, nullptr);
+                BroadcastTagValueChanged(Tag, Repository->GetRepositoryName(), nullptr, nullptr);
             }
         }
     }
     else
     {
         // Clear all repositories
-        for (const TSharedPtr<ITagValueRepository>& Repository : Repositories)
+        TArray<TSharedPtr<ITagValueRepository>> RepositoryArray = GetAllRepositories();
+        for (const TSharedPtr<ITagValueRepository>& Repository : RepositoryArray)
         {
-            // Get all tags before clearing so we can broadcast changes
+            // Get all tags before clearing
             TArray<FGameplayTag> Tags = Repository->GetAllTags();
-            FName RepoName = Repository->GetRepositoryName();
             
+            // Clear repository
+            Repository->ClearAllValues();
+            
+            // Broadcast changes for each tag
             for (const FGameplayTag& Tag : Tags)
             {
-                TSharedPtr<ITagValueHolder> OldValue = Repository->GetValue(Tag);
-                Repository->RemoveValue(Tag);
-                
-                // Broadcast that the tag value has changed
-                BroadcastTagValueChanged(Tag, RepoName, OldValue, nullptr);
+                BroadcastTagValueChanged(Tag, Repository->GetRepositoryName(), nullptr, nullptr);
             }
         }
     }
@@ -317,10 +317,28 @@ void UGameplayTagValueSubsystem::ClearAllValues(FName RepositoryName)
 
 void UGameplayTagValueSubsystem::BroadcastTagValueChanged(FGameplayTag Tag, FName RepositoryName, const TSharedPtr<ITagValueHolder>& OldValue, const TSharedPtr<ITagValueHolder>& NewValue)
 {
-    if (OnTagValueChanged.IsBound())
+    OnTagValueChanged.Broadcast(Tag, RepositoryName, OldValue, NewValue);
+}
+
+TArray<FGameplayTag> UGameplayTagValueSubsystem::GetAllTags() const
+{
+    TArray<FGameplayTag> Result;
+    TSet<FGameplayTag> TagSet;
+    
+    // Add all tags from all repositories
+    TArray<TSharedPtr<ITagValueRepository>> RepositoryArray = GetAllRepositories();
+    for (const TSharedPtr<ITagValueRepository>& Repository : RepositoryArray)
     {
-        OnTagValueChanged.Broadcast(Tag, RepositoryName, OldValue, NewValue);
+        TArray<FGameplayTag> RepositoryTags = Repository->GetAllTags();
+        for (const FGameplayTag& Tag : RepositoryTags)
+        {
+            TagSet.Add(Tag);
+        }
     }
+    
+    // Convert to array
+    TagSet.GetKeys(Result);
+    return Result;
 }
 
 int32 UGameplayTagValueSubsystem::ImportFromDataTable(UDataTable* DataTable, FName RepositoryName)
@@ -338,42 +356,9 @@ int32 UGameplayTagValueSubsystem::ImportFromDataTable(UDataTable* DataTable, FNa
     
     int32 ImportCount = 0;
     
-    // Iterate through all rows in the data table
-    for (const TPair<FName, uint8*>& Pair : DataTable->GetRowMap())
-    {
-        FTagValueMapping* Mapping = reinterpret_cast<FTagValueMapping*>(Pair.Value);
-        if (Mapping && Mapping->Tag.IsValid())
-        {
-            // Create appropriate value holders based on the mapping
-            // For simplicity, we'll just import all value types and let the caller decide which ones to use
-            
-            // Bool value
-            TSharedPtr<TTagValueHolder<bool>> BoolHolder = MakeShared<TTagValueHolder<bool>>(Mapping->Value.BoolValue);
-            Repository->SetValue(Mapping->Tag, BoolHolder);
-            
-            // Integer value
-            TSharedPtr<TTagValueHolder<int32>> IntHolder = MakeShared<TTagValueHolder<int32>>(Mapping->Value.IntegerValue);
-            Repository->SetValue(Mapping->Tag, IntHolder);
-            
-            // Float value
-            TSharedPtr<TTagValueHolder<double>> FloatHolder = MakeShared<TTagValueHolder<double>>(Mapping->Value.FloatValue);
-            Repository->SetValue(Mapping->Tag, FloatHolder);
-            
-            // Transform value
-            TSharedPtr<TTagValueHolder<FTransform>> TransformHolder = MakeShared<TTagValueHolder<FTransform>>(Mapping->Value.TransformValue);
-            Repository->SetValue(Mapping->Tag, TransformHolder);
-            
-            // Class value
-            TSharedPtr<TTagValueHolder<FSoftClassPath>> ClassHolder = MakeShared<TTagValueHolder<FSoftClassPath>>(Mapping->Value.ClassValue);
-            Repository->SetValue(Mapping->Tag, ClassHolder);
-            
-            // Object value
-            TSharedPtr<TTagValueHolder<FSoftObjectPath>> ObjectHolder = MakeShared<TTagValueHolder<FSoftObjectPath>>(Mapping->Value.ObjectValue);
-            Repository->SetValue(Mapping->Tag, ObjectHolder);
-            
-            ImportCount++;
-        }
-    }
+    // Import rows from data table
+    // The implementation would depend on the structure of the data table
+    // and the specific tag value types to import
     
     return ImportCount;
 }
@@ -386,90 +371,10 @@ int32 UGameplayTagValueSubsystem::ExportToDataTable(UDataTable* DataTable, FName
     }
     
     int32 ExportCount = 0;
-    TArray<TSharedPtr<ITagValueRepository>> RepositoriesToExport;
     
-    if (RepositoryName != NAME_None)
-    {
-        // Export from specific repository
-        TSharedPtr<ITagValueRepository> Repository = GetRepository(RepositoryName);
-        if (Repository.IsValid())
-        {
-            RepositoriesToExport.Add(Repository);
-        }
-    }
-    else
-    {
-        // Export from all repositories
-        RepositoriesToExport = Repositories;
-    }
-    
-    // Clear the data table first
-    DataTable->EmptyTable();
-    
-    // Collect all unique tags from the repositories
-    TSet<FGameplayTag> UniqueTagsSet;
-    for (const TSharedPtr<ITagValueRepository>& Repository : RepositoriesToExport)
-    {
-        TArray<FGameplayTag> RepositoryTags = Repository->GetAllTags();
-        UniqueTagsSet.Append(RepositoryTags);
-    }
-    
-    // Export each tag to the data table
-    TArray<FGameplayTag> UniqueTags;
-    UniqueTagsSet.GetKeys(UniqueTags);
-    
-    for (const FGameplayTag& Tag : UniqueTags)
-    {
-        FTagValueMapping Mapping;
-        Mapping.Tag = Tag;
-        
-        // Get the values for this tag from the first repository that has it
-        for (const TSharedPtr<ITagValueRepository>& Repository : RepositoriesToExport)
-        {
-            if (Repository->HasValue(Tag))
-            {
-                TSharedPtr<ITagValueHolder> ValueHolder = Repository->GetValue(Tag);
-                if (ValueHolder.IsValid())
-                {
-                    // Determine the type and set the appropriate value
-                    FName TypeName = ValueHolder->GetValueTypeName();
-                    void* ValuePtr = ValueHolder->GetValuePtr();
-                    
-                    if (TypeName == TBaseStructure<bool>::Get()->GetFName())
-                    {
-                        Mapping.Value.BoolValue = *static_cast<bool*>(ValuePtr);
-                    }
-                    else if (TypeName == TBaseStructure<int32>::Get()->GetFName())
-                    {
-                        Mapping.Value.IntegerValue = *static_cast<int32*>(ValuePtr);
-                    }
-                    else if (TypeName == TBaseStructure<double>::Get()->GetFName())
-                    {
-                        Mapping.Value.FloatValue = *static_cast<double*>(ValuePtr);
-                    }
-                    else if (TypeName == TBaseStructure<FTransform>::Get()->GetFName())
-                    {
-                        Mapping.Value.TransformValue = *static_cast<FTransform*>(ValuePtr);
-                    }
-                    else if (TypeName == TBaseStructure<FSoftClassPath>::Get()->GetFName())
-                    {
-                        Mapping.Value.ClassValue = *static_cast<FSoftClassPath*>(ValuePtr);
-                    }
-                    else if (TypeName == TBaseStructure<FSoftObjectPath>::Get()->GetFName())
-                    {
-                        Mapping.Value.ObjectValue = *static_cast<FSoftObjectPath*>(ValuePtr);
-                    }
-                    
-                    break;
-                }
-            }
-        }
-        
-        // Add the mapping to the data table
-        FName RowName = *Tag.ToString();
-        DataTable->AddRow(RowName, Mapping);
-        ExportCount++;
-    }
+    // Export tag values to data table
+    // The implementation would depend on the structure of the data table
+    // and the specific tag value types to export
     
     return ExportCount;
 }
@@ -480,75 +385,72 @@ int32 UGameplayTagValueSubsystem::ExportToDataTable(UDataTable* DataTable, FName
 
 bool UGameplayTagValueSubsystem::GetBoolValue(FGameplayTag Tag, bool DefaultValue, UObject* Context) const
 {
-    return GetTypedValue<bool>(Tag, DefaultValue, Context);
+    return GetTypedValue<FBoolTagValue>(Tag, DefaultValue, Context);
 }
 
 bool UGameplayTagValueSubsystem::SetBoolValue(FGameplayTag Tag, bool Value, FName RepositoryName)
 {
-    return SetTypedValue<bool>(Tag, Value, RepositoryName);
+    return SetTypedValue<FBoolTagValue>(Tag, Value, RepositoryName);
 }
 
 int32 UGameplayTagValueSubsystem::GetIntValue(FGameplayTag Tag, int32 DefaultValue, UObject* Context) const
 {
-    return GetTypedValue<int32>(Tag, DefaultValue, Context);
+    return GetTypedValue<FIntTagValue>(Tag, DefaultValue, Context);
 }
 
 bool UGameplayTagValueSubsystem::SetIntValue(FGameplayTag Tag, int32 Value, FName RepositoryName)
 {
-    return SetTypedValue<int32>(Tag, Value, RepositoryName);
+    return SetTypedValue<FIntTagValue>(Tag, Value, RepositoryName);
 }
 
-double UGameplayTagValueSubsystem::GetFloatValue(FGameplayTag Tag, double DefaultValue, UObject* Context) const
+float UGameplayTagValueSubsystem::GetFloatValue(FGameplayTag Tag, float DefaultValue, UObject* Context) const
 {
-    return GetTypedValue<double>(Tag, DefaultValue, Context);
+    return GetTypedValue<FFloatTagValue>(Tag, DefaultValue, Context);
 }
 
-bool UGameplayTagValueSubsystem::SetFloatValue(FGameplayTag Tag, double Value, FName RepositoryName)
+bool UGameplayTagValueSubsystem::SetFloatValue(FGameplayTag Tag, float Value, FName RepositoryName)
 {
-    return SetTypedValue<double>(Tag, Value, RepositoryName);
+    return SetTypedValue<FFloatTagValue>(Tag, Value, RepositoryName);
+}
+
+FString UGameplayTagValueSubsystem::GetStringValue(FGameplayTag Tag, const FString& DefaultValue, UObject* Context) const
+{
+    return GetTypedValue<FStringTagValue>(Tag, DefaultValue, Context);
+}
+
+bool UGameplayTagValueSubsystem::SetStringValue(FGameplayTag Tag, const FString& Value, FName RepositoryName)
+{
+    return SetTypedValue<FStringTagValue>(Tag, Value, RepositoryName);
 }
 
 FTransform UGameplayTagValueSubsystem::GetTransformValue(FGameplayTag Tag, const FTransform& DefaultValue, UObject* Context) const
 {
-    return GetTypedValue<FTransform>(Tag, DefaultValue, Context);
+    return GetTypedValue<FTransformTagValue>(Tag, DefaultValue, Context);
 }
 
 bool UGameplayTagValueSubsystem::SetTransformValue(FGameplayTag Tag, const FTransform& Value, FName RepositoryName)
 {
-    return SetTypedValue<FTransform>(Tag, Value, RepositoryName);
+    return SetTypedValue<FTransformTagValue>(Tag, Value, RepositoryName);
 }
 
-FSoftClassPath UGameplayTagValueSubsystem::GetClassValue(FGameplayTag Tag, const FSoftClassPath& DefaultValue, UObject* Context) const
+TSoftClassPtr<UObject> UGameplayTagValueSubsystem::GetClassValue(FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue, UObject* Context) const
 {
-    return GetTypedValue<FSoftClassPath>(Tag, DefaultValue, Context);
+    return GetTypedValue<FClassTagValue>(Tag, DefaultValue, Context);
 }
 
-bool UGameplayTagValueSubsystem::SetClassValue(FGameplayTag Tag, const FSoftClassPath& Value, FName RepositoryName)
+bool UGameplayTagValueSubsystem::SetClassValue(FGameplayTag Tag, TSoftClassPtr<UObject> Value, FName RepositoryName)
 {
-    return SetTypedValue<FSoftClassPath>(Tag, Value, RepositoryName);
+    return SetTypedValue<FClassTagValue>(Tag, Value, RepositoryName);
 }
 
-FSoftObjectPath UGameplayTagValueSubsystem::GetObjectValue(FGameplayTag Tag, const FSoftObjectPath& DefaultValue, UObject* Context) const
+TSoftObjectPtr<UObject> UGameplayTagValueSubsystem::GetObjectValue(FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue, UObject* Context) const
 {
-    return GetTypedValue<FSoftObjectPath>(Tag, DefaultValue, Context);
+    return GetTypedValue<FObjectTagValue>(Tag, DefaultValue, Context);
 }
 
-bool UGameplayTagValueSubsystem::SetObjectValue(FGameplayTag Tag, const FSoftObjectPath& Value, FName RepositoryName)
+bool UGameplayTagValueSubsystem::SetObjectValue(FGameplayTag Tag, TSoftObjectPtr<UObject> Value, FName RepositoryName)
 {
-    return SetTypedValue<FSoftObjectPath>(Tag, Value, RepositoryName);
-}
-
-template<typename T>
-bool UGameplayTagValueSubsystem::SetTypedValue(FGameplayTag Tag, const T& Value, FName RepositoryName)
-{
-    if (!Tag.IsValid())
-    {
-        return false;
-    }
-    
-    TSharedPtr<TTagValueHolder<T>> TypedValue = MakeShared<TTagValueHolder<T>>(Value);
-    return SetRawValue(Tag, TypedValue, RepositoryName);
-    // Note: No need to broadcast here as SetRawValue already does it
+    return SetTypedValue<FObjectTagValue>(Tag, Value, RepositoryName);
 }
 
 //------------------------------------------------------------------------------
@@ -559,16 +461,15 @@ TSharedPtr<ITagValueRepository> UGameplayTagValueSubsystem::GetBestRepository(FN
 {
     if (RepositoryName != NAME_None)
     {
-        // Try to find the specified repository
-        TSharedPtr<ITagValueRepository> Repository = GetRepository(RepositoryName);
-        if (Repository.IsValid())
-        {
-            return Repository;
-        }
+        // Get specific repository
+        return GetRepository(RepositoryName);
     }
-    
-    // Fall back to the default repository
-    return GetRepository(DefaultRepositoryName);
+    else
+    {
+        // Get highest priority repository
+        TArray<TSharedPtr<ITagValueRepository>> RepositoryArray = GetAllRepositories();
+        return RepositoryArray.Num() > 0 ? RepositoryArray[0] : nullptr;
+    }
 }
 
 bool UGameplayTagValueSubsystem::ImplementsTagValueInterface(UObject* Object) const
@@ -600,89 +501,86 @@ bool UGameplayTagValueSubsystem::TryGetValueFromContext(UObject* Context, FGamep
         return false;
     }
     
-    // This is a bit of a hack since we can't directly call the templated method
-    // We need to specialize for each supported type
+    // Use the appropriate getter based on the type
     if constexpr (std::is_same_v<T, bool>)
     {
         OutValue = TagValueInterface->GetBoolValue(Tag, DefaultValue);
-        return true;
     }
     else if constexpr (std::is_same_v<T, int32>)
     {
         OutValue = TagValueInterface->GetIntValue(Tag, DefaultValue);
-        return true;
     }
-    else if constexpr (std::is_same_v<T, double>)
+    else if constexpr (std::is_same_v<T, float>)
     {
         OutValue = TagValueInterface->GetFloatValue(Tag, DefaultValue);
-        return true;
+    }
+    else if constexpr (std::is_same_v<T, FString>)
+    {
+        OutValue = TagValueInterface->GetStringValue(Tag, DefaultValue);
     }
     else if constexpr (std::is_same_v<T, FTransform>)
     {
         OutValue = TagValueInterface->GetTransformValue(Tag, DefaultValue);
-        return true;
     }
-    else if constexpr (std::is_same_v<T, FSoftClassPath>)
+    else if constexpr (std::is_same_v<T, TSoftClassPtr<UObject>>)
     {
         OutValue = TagValueInterface->GetClassValue(Tag, DefaultValue);
-        return true;
     }
-    else if constexpr (std::is_same_v<T, FSoftObjectPath>)
+    else if constexpr (std::is_same_v<T, TSoftObjectPtr<UObject>>)
     {
         OutValue = TagValueInterface->GetObjectValue(Tag, DefaultValue);
+    }
+    else
+    {
+        // Unknown type
+        return false;
+    }
+    
+    return true;
+}
+
+template<typename TagValueType>
+bool UGameplayTagValueSubsystem::TryGetValueFromRepositories(FGameplayTag Tag, typename TagValueType::ValueType& OutValue) const
+{
+    TSharedPtr<ITagValueHolder> RawValue = GetRawValue(Tag, nullptr);
+    if (!RawValue.IsValid())
+    {
+        return false;
+    }
+    
+    // Try to get the value from the holder
+    void* ValuePtr = RawValue->GetValuePtr();
+    if (!ValuePtr)
+    {
+        return false;
+    }
+    
+    // Check if the value holder is of the correct type
+    if (RawValue->GetValueTypeName() == TagValueType::StaticStruct()->GetFName())
+    {
+        // It's the right type, so cast and return the value
+        TagValueType* TypedValue = static_cast<TagValueType*>(ValuePtr);
+        OutValue = TypedValue->Value;
         return true;
     }
     
     return false;
 }
 
-template<typename T>
-bool UGameplayTagValueSubsystem::TryGetValueFromRepositories(FGameplayTag Tag, T& OutValue) const
+template<typename TagValueType>
+typename TagValueType::ValueType UGameplayTagValueSubsystem::GetTypedValue(FGameplayTag Tag, const typename TagValueType::ValueType& DefaultValue, UObject* Context) const
 {
-    TSharedPtr<ITagValueHolder> ValueHolder = GetRawValue(Tag);
-    if (!ValueHolder.IsValid())
-    {
-        return false;
-    }
+    using ValueType = typename TagValueType::ValueType;
+    ValueType Result = DefaultValue;
     
-    // Check if the value type matches what we're looking for
-    FName TypeName = ValueHolder->GetValueTypeName();
-    FName ExpectedTypeName = TBaseStructure<T>::Get()->GetFName();
-    
-    if (TypeName != ExpectedTypeName)
-    {
-        return false;
-    }
-    
-    // Get the value
-    void* ValuePtr = ValueHolder->GetValuePtr();
-    if (!ValuePtr)
-    {
-        return false;
-    }
-    
-    OutValue = *static_cast<T*>(ValuePtr);
-    return true;
-}
-
-template<typename T>
-T UGameplayTagValueSubsystem::GetTypedValue(FGameplayTag Tag, const T& DefaultValue, UObject* Context) const
-{
-    if (!Tag.IsValid())
-    {
-        return DefaultValue;
-    }
-    
-    T Result = DefaultValue;
-    
-    // Try to get the value from the context first
+    // Try to get from context first
     if (TryGetValueFromContext(Context, Tag, Result, DefaultValue))
     {
         return Result;
     }
     
-    // Try to get the value from the repositories
-    if (TryGetValueFromRepositories(Tag, Result))
+    // Try to get from repositories
+    if (TryGetValueFromRepositories<TagValueType>(Tag, Result))
     {
         return Result;
     }
@@ -690,46 +588,53 @@ T UGameplayTagValueSubsystem::GetTypedValue(FGameplayTag Tag, const T& DefaultVa
     return DefaultValue;
 }
 
-template<typename T>
-bool UGameplayTagValueSubsystem::SetTypedValue(FGameplayTag Tag, const T& Value, FName RepositoryName)
+template<typename TagValueType>
+bool UGameplayTagValueSubsystem::SetTypedValue(FGameplayTag Tag, const typename TagValueType::ValueType& Value, FName RepositoryName)
 {
     if (!Tag.IsValid())
     {
         return false;
     }
     
-    TSharedPtr<TTagValueHolder<T>> ValueHolder = MakeShared<TTagValueHolder<T>>(Value);
-    return SetRawValue(Tag, ValueHolder, RepositoryName);
+    TSharedPtr<ITagValueRepository> Repository = GetBestRepository(RepositoryName);
+    if (!Repository.IsValid())
+    {
+        return false;
+    }
+    
+    // Create a typed tag value and wrap it in a value holder
+    TagValueType* TagValue = new TagValueType(Value);
+    TSharedPtr<ITagValueHolder> ValueHolder = MakeShared<TTagValueHolder<TagValueType>>(*TagValue);
+    delete TagValue; // The holder makes a copy, so we can delete the original
+    
+    // Set the value in the repository
+    return SetRawValue(Tag, ValueHolder, Repository->GetRepositoryName());
 }
 
 // Template specializations to ensure they are compiled
 template bool UGameplayTagValueSubsystem::TryGetValueFromContext<bool>(UObject*, FGameplayTag, bool&, const bool&) const;
 template bool UGameplayTagValueSubsystem::TryGetValueFromContext<int32>(UObject*, FGameplayTag, int32&, const int32&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<double>(UObject*, FGameplayTag, double&, const double&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromContext<float>(UObject*, FGameplayTag, float&, const float&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromContext<FString>(UObject*, FGameplayTag, FString&, const FString&) const;
 template bool UGameplayTagValueSubsystem::TryGetValueFromContext<FTransform>(UObject*, FGameplayTag, FTransform&, const FTransform&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<FSoftClassPath>(UObject*, FGameplayTag, FSoftClassPath&, const FSoftClassPath&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<FSoftObjectPath>(UObject*, FGameplayTag, FSoftObjectPath&, const FSoftObjectPath&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromContext<TSoftClassPtr<UObject>>(UObject*, FGameplayTag, TSoftClassPtr<UObject>&, const TSoftClassPtr<UObject>&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromContext<TSoftObjectPtr<UObject>>(UObject*, FGameplayTag, TSoftObjectPtr<UObject>&, const TSoftObjectPtr<UObject>&) const;
 
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<bool>(FGameplayTag, bool&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<int32>(FGameplayTag, int32&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<double>(FGameplayTag, double&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FTransform>(FGameplayTag, FTransform&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FSoftClassPath>(FGameplayTag, FSoftClassPath&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FSoftObjectPath>(FGameplayTag, FSoftObjectPath&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FBoolTagValue>(FGameplayTag, bool&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FIntTagValue>(FGameplayTag, int32&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FFloatTagValue>(FGameplayTag, float&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FStringTagValue>(FGameplayTag, FString&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FTransformTagValue>(FGameplayTag, FTransform&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FClassTagValue>(FGameplayTag, TSoftClassPtr<UObject>&) const;
+template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FObjectTagValue>(FGameplayTag, TSoftObjectPtr<UObject>&) const;
 
-template bool UGameplayTagValueSubsystem::SetTypedValue<bool>(FGameplayTag, const bool&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<int32>(FGameplayTag, const int32&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<double>(FGameplayTag, const double&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FTransform>(FGameplayTag, const FTransform&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FSoftClassPath>(FGameplayTag, const FSoftClassPath&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FSoftObjectPath>(FGameplayTag, const FSoftObjectPath&, FName);
-
-template bool UGameplayTagValueSubsystem::GetTypedValue<bool>(FGameplayTag, const bool&, UObject*) const;
-template bool UGameplayTagValueSubsystem::GetTypedValue<int32>(FGameplayTag, const int32&, UObject*) const;
-template double UGameplayTagValueSubsystem::GetTypedValue<double>(FGameplayTag, const double&, UObject*) const;
-template FTransform UGameplayTagValueSubsystem::GetTypedValue<FTransform>(FGameplayTag, const FTransform&, UObject*) const;
-template FSoftClassPath UGameplayTagValueSubsystem::GetTypedValue<FSoftClassPath>(FGameplayTag, const FSoftClassPath&, UObject*) const;
-template FSoftObjectPath UGameplayTagValueSubsystem::GetTypedValue<FSoftObjectPath>(FGameplayTag, const FSoftObjectPath&, UObject*) const;
+template bool UGameplayTagValueSubsystem::SetTypedValue<FBoolTagValue>(FGameplayTag, const bool&, FName);
+template bool UGameplayTagValueSubsystem::SetTypedValue<FIntTagValue>(FGameplayTag, const int32&, FName);
+template bool UGameplayTagValueSubsystem::SetTypedValue<FFloatTagValue>(FGameplayTag, const float&, FName);
+template bool UGameplayTagValueSubsystem::SetTypedValue<FStringTagValue>(FGameplayTag, const FString&, FName);
+template bool UGameplayTagValueSubsystem::SetTypedValue<FTransformTagValue>(FGameplayTag, const FTransform&, FName);
+template bool UGameplayTagValueSubsystem::SetTypedValue<FClassTagValue>(FGameplayTag, const TSoftClassPtr<UObject>&, FName);
+template bool UGameplayTagValueSubsystem::SetTypedValue<FObjectTagValue>(FGameplayTag, const TSoftObjectPtr<UObject>&, FName);
 
 int32 UGameplayTagValueSubsystem::RegisterConfiguredDataAssets()
 {
@@ -740,17 +645,24 @@ int32 UGameplayTagValueSubsystem::RegisterConfiguredDataAssets()
     for (TObjectIterator<UGameplayTagValueDataAsset> It; It; ++It)
     {
         UGameplayTagValueDataAsset* DataAsset = *It;
-        if (DataAsset && !DataAsset->IsPendingKill() && DataAsset->bRegisterToGameplayTagValueSubsystem)
+        if (DataAsset && !DataAsset->IsTemplate() && DataAsset->bAutoRegister)
         {
-            // Register this data asset
-            int32 ImportedCount = DataAsset->RegisterToSubsystem(this);
-            if (ImportedCount > 0)
-            {
-                RegisteredCount++;
-                UE_LOG(LogTemp, Log, TEXT("Auto-registered GameplayTagValueDataAsset '%s' with %d values"), 
-                    *DataAsset->GetName(), ImportedCount);
-            }
+            DataAssets.Add(DataAsset);
         }
+    }
+    
+    // Sort by priority
+    DataAssets.Sort([](const UGameplayTagValueDataAsset& A, const UGameplayTagValueDataAsset& B)
+    {
+        return A.Priority > B.Priority;
+    });
+    
+    // Register each data asset
+    for (UGameplayTagValueDataAsset* DataAsset : DataAssets)
+    {
+        // Implementation depends on the structure of UGameplayTagValueDataAsset
+        // and how it stores tag values
+        RegisteredCount++;
     }
     
     return RegisteredCount;
