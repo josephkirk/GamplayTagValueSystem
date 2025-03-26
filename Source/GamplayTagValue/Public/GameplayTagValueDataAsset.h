@@ -4,8 +4,78 @@
 #include "Engine/DataAsset.h"
 #include "Engine/DataTable.h"
 #include "GameplayTags.h"
-#include "TagValue.h"
+#include "TagValueBase.h"
 #include "GameplayTagValueDataAsset.generated.h"
+
+/**
+ * Data table row structure for storing tag-value pairs with dynamic value types.
+ * This is used by the GameplayTagValueDataAsset to define tag values in data tables.
+ */
+USTRUCT(BlueprintType)
+struct GAMPLAYTAGVALUE_API FTagValueDataTableRow : public FTableRowBase
+{
+    GENERATED_USTRUCT_BODY()
+
+    /** The gameplay tag this value is associated with */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value")
+    FGameplayTag Tag;
+
+    /** Boolean value */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Bool", EditConditionHides))
+    bool BoolValue = false;
+
+    /** Integer value */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Int", EditConditionHides))
+    int32 IntValue = 0;
+
+    /** Float value */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Float", EditConditionHides))
+    float FloatValue = 0.0f;
+
+    /** String value */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::String", EditConditionHides))
+    FString StringValue;
+
+    /** Transform value */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Transform", EditConditionHides))
+    FTransform TransformValue;
+
+    /** Class value */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Class", EditConditionHides))
+    TSoftClassPtr<UObject> ClassValue;
+
+    /** Object value */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Object", EditConditionHides))
+    TSoftObjectPtr<UObject> ObjectValue;
+
+    /** Type of value to use */
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value")
+    ETagValueType ValueType = ETagValueType::Bool;
+
+    /** Creates a shared pointer to the appropriate FBaseTagValue subclass based on the ValueType */
+    TSharedPtr<FBaseTagValue> CreateTagValue() const
+    {
+        switch (ValueType)
+        {
+        case ETagValueType::Bool:
+            return MakeShared<FBoolTagValue>(BoolValue);
+        case ETagValueType::Int:
+            return MakeShared<FIntTagValue>(IntValue);
+        case ETagValueType::Float:
+            return MakeShared<FFloatTagValue>(FloatValue);
+        case ETagValueType::String:
+            return MakeShared<FStringTagValue>(StringValue);
+        case ETagValueType::Transform:
+            return MakeShared<FTransformTagValue>(TransformValue);
+        case ETagValueType::Class:
+            return MakeShared<FClassTagValue>(ClassValue);
+        case ETagValueType::Object:
+            return MakeShared<FObjectTagValue>(ObjectValue);
+        default:
+            return nullptr;
+        }
+    }
+};
 
 /**
  * Data asset that stores tag-value pairs via datatables for the GameplayTagValue system.
@@ -17,16 +87,20 @@ class GAMPLAYTAGVALUE_API UGameplayTagValueDataAsset : public UDataAsset
 {
     GENERATED_BODY()
 public:
-    /** Whether to register this data asset to GameplayTagValueSubsystem on game start */
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Tag Values", meta=(DisplayName="Register to GameplayTagValueSubsystem"))
-    bool bRegisterToGameplayTagValueSubsystem;
+    /** Whether to auto-register this data asset to GameplayTagValueSubsystem on game start */
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Tag Values")
+    bool bAutoRegister = false;
 
-    /** Datatable to register to GameplayTagValueSubsystem. Each table should use FTagValueMapping as its row structure. */
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Tag Values", meta=(DisplayName="Data Tables"))
+    /** Priority of this data asset when registering to the subsystem (higher priorities will override lower) */
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Tag Values")
+    int32 Priority = 100;
+
+    /** Datatable to register to GameplayTagValueSubsystem. Each table should use FTagValueDataTableRow as its row structure. */
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Tag Values")
     TArray<UDataTable*> DataTables;
     
     /** Repository name to use when registering the data tables. If empty, uses the default repository. */
-    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Tag Values", meta=(DisplayName="Repository Name"))
+    UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Tag Values")
     FName RepositoryName;
     
     /** 

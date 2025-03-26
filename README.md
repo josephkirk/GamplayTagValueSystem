@@ -6,12 +6,13 @@ The GameplayTag Value System extends Unreal Engine's GameplayTags with the abili
 
 ## Features
 
-- **Type-safe storage** for associating values with GameplayTags
+- **Inheritance-based type safety** for associating values with GameplayTags
 - **Multiple value types** support including:
   - Primitive types (bool, int, float)
+  - Strings
   - Transforms
-  - Class references (via FSoftClassPath)
-  - Object references (via FSoftObjectPath)
+  - Class references (via TSoftClassPtr)
+  - Object references (via TSoftObjectPtr)
 - **Repository pattern** for flexible storage backends
 - **Actor Component implementation** for easy integration with actors
 - **Hierarchical tag inheritance** for logical data organization
@@ -19,10 +20,18 @@ The GameplayTag Value System extends Unreal Engine's GameplayTags with the abili
 - **Data Table integration** for configuration-driven workflows
 - **Blueprint-friendly API** with comprehensive function library
 - **Data asset support** for easy management of tag-value collections
+- **Custom Blueprint nodes** for type-safe tag value operations in Blueprints
+- **Multi-repository architecture** with priority-based value resolution
 
 ## Architecture
 
 ### Core Components
+
+#### FBaseTagValue Inheritance System
+- Base abstract struct for all tag value types
+- Concrete type implementations for each supported value type
+- Type-safe access through derived type knowledge
+- Virtual methods for type checking and serialization
 
 #### GameplayTagValueSubsystem
 - Central management system (UGameInstanceSubsystem)
@@ -36,16 +45,22 @@ The GameplayTag Value System extends Unreal Engine's GameplayTags with the abili
 - Memory-based implementation (FMemoryTagValueRepository)
 - Component-based implementation (UTagValueRepositoryComponent)
 - Prioritization system for repository chain
+- Default repositories: Config (200), Default (100), Runtime (50)
 
-#### TagValueHolder
-- Type erasure implementation via ITagValueHolder interface
-- Template specializations for different value types
-- Memory-efficient design with value copying
+#### TagValueContainer
+- Type-safe container for holding and managing tag values
+- Strongly-typed getters and setters for all value types
+- Support for serialization and copying
 
 #### Blueprint Function Library
 - Type-safe Blueprint API via UGameplayTagValueFunctionLibrary
 - Helper functions for all supported value types
 - World context object pattern for easy access
+
+#### Custom Blueprint Nodes
+- UK2Node_GetGameplayTagValue for retrieving values with automatic type resolution
+- UK2Node_SetGameplayTagValue for setting values with automatic type resolution
+- Automatically registered during module startup
 
 ### System Diagram
 
@@ -67,14 +82,14 @@ The GameplayTag Value System extends Unreal Engine's GameplayTags with the abili
             | ITagValueRepository |     | TagValue Blueprint API |
             |                     |     |                        |
             +---------------------+     +------------------------+
-                       |
-        +---------------+---------------+
-        |                               |
-+-------v-------+           +-----------v---------+
-|               |           |                     |
-| Memory Repo   |           | Component Repo      |
-|               |           |                     |
-+---------------+           +---------------------+
+                       |                             |
+        +---------------+---------------+   +--------v---------+
+        |               |               |   |                  |
++-------v-------+  +---v---+  +--------v--+ | Custom Blueprint |
+|               |  |       |  |           | | Nodes            |
+| Config Repo   |  |Default|  | Runtime   | |                  |
+| (Priority 200)|  |(100)  |  | (50)      | +------------------+
++---------------+  +-------+  +-----------+
 ```
 
 ## Usage
@@ -89,20 +104,13 @@ UGameplayTagValueSubsystem* Subsystem = UGameplayTagValueSubsystem::Get(GetWorld
 Subsystem->SetBoolValue(FGameplayTag::RequestGameplayTag("MyBoolTag"), true);
 Subsystem->SetIntValue(FGameplayTag::RequestGameplayTag("MyIntTag"), 10);
 Subsystem->SetFloatValue(FGameplayTag::RequestGameplayTag("MyFloatTag"), 3.14f);
+Subsystem->SetStringValue(FGameplayTag::RequestGameplayTag("MyStringTag"), "Hello World");
 
-// Get values
-bool BoolValue;
-int IntValue;
-float FloatValue;
-
-Subsystem->GetBoolValue(FGameplayTag::RequestGameplayTag("MyBoolTag"), BoolValue);
-Subsystem->GetIntValue(FGameplayTag::RequestGameplayTag("MyIntTag"), IntValue);
-Subsystem->GetFloatValue(FGameplayTag::RequestGameplayTag("MyFloatTag"), FloatValue);
-
-// Get values
-bool BoolValue = Subsystem->GetBoolValue(FGameplayTag::RequestGameplayTag("Character.CanJump"));
-int32 MaxHealth = Subsystem->GetIntValue(FGameplayTag::RequestGameplayTag("Character.MaxHealth"));
-float JumpHeight = Subsystem->GetFloatValue(FGameplayTag::RequestGameplayTag("Character.JumpHeight"));
+// Get values with default fallbacks
+bool BoolValue = Subsystem->GetBoolValue(FGameplayTag::RequestGameplayTag("Character.CanJump"), false);
+int32 MaxHealth = Subsystem->GetIntValue(FGameplayTag::RequestGameplayTag("Character.MaxHealth"), 100);
+float JumpHeight = Subsystem->GetFloatValue(FGameplayTag::RequestGameplayTag("Character.JumpHeight"), 300.0f);
+FString CharacterName = Subsystem->GetStringValue(FGameplayTag::RequestGameplayTag("Character.Name"), "DefaultName");
 
 // Use context objects
 int32 ContextHealth = Subsystem->GetIntValue(
@@ -110,15 +118,37 @@ int32 ContextHealth = Subsystem->GetIntValue(
     0, // Default value
     MyCharacter // Context object implementing UTagValueInterface
 );
+
+// Using the FTagValueContainer directly
+FTagValueContainer Container;
+Container.SetBoolValue(FGameplayTag::RequestGameplayTag("MyBoolTag"), true);
+Container.SetIntValue(FGameplayTag::RequestGameplayTag("MyIntTag"), 42);
+
+bool MyBool = Container.GetBoolValue(FGameplayTag::RequestGameplayTag("MyBoolTag"), false);
+int32 MyInt = Container.GetIntValue(FGameplayTag::RequestGameplayTag("MyIntTag"), 0);
+
+// Specify a repository when setting values
+Subsystem->SetBoolValue(FGameplayTag::RequestGameplayTag("Config.Feature.Enabled"), true, "Config");
+Subsystem->SetIntValue(FGameplayTag::RequestGameplayTag("Runtime.Player.Score"), 1000, "Runtime");
 ```
 
 ### Blueprint Usage
 
 1. Get the GameplayTagValueSubsystem via the function library
 2. Use the Blueprint function library to get/set tag values
-3. Implement UTagValueInterface on actors or components for contextual values
-4. Use data assets to configure and load tag values from data tables
-5. Add TagValueRepositoryComponent to actors to store tag values directly
+3. Use the custom "Get Gameplay Tag Value" and "Set Gameplay Tag Value" nodes for automatic type resolution
+4. Implement UTagValueInterface on actors or components for contextual values
+5. Use data assets to configure and load tag values from data tables
+6. Add TagValueRepositoryComponent to actors to store tag values directly
+
+### Custom Blueprint Nodes
+
+The system provides two custom Blueprint nodes for working with tag values:
+
+- **Get Gameplay Tag Value**: Retrieves a value for a specified tag with automatic type resolution based on the connected output pin
+- **Set Gameplay Tag Value**: Sets a value for a specified tag with automatic type resolution based on the connected input pin
+
+These nodes automatically determine the value type based on the pins you connect, making it easy to work with tag values of different types without having to select the correct function.
 
 ### Using TagValueRepositoryComponent
 
@@ -132,23 +162,37 @@ TagRepo->Priority = 100;
 TagRepo->bRegisterToSubsystem = true;
 
 // Add tag values directly
-FTagValue BoolValue;
-BoolValue.BoolValue = true;
-TagRepo->SetTagValueMapping(FGameplayTag::RequestGameplayTag("MyActor.CanJump"), BoolValue);
+TagRepo->SetBoolValue(FGameplayTag::RequestGameplayTag("MyActor.CanJump"), true);
+TagRepo->SetIntValue(FGameplayTag::RequestGameplayTag("MyActor.MaxHealth"), 100);
+TagRepo->SetStringValue(FGameplayTag::RequestGameplayTag("MyActor.Name"), "PlayerCharacter");
 
 // Or in Blueprint, add the component and configure tag values in the editor
 ```
 
 ### Data Table Integration
 
-```cpp
-// Import values from a data table
-UDataTable* MyDataTable = LoadObject<UDataTable>(nullptr, TEXT("/Game/MyDataTable"));
-Subsystem->ImportFromDataTable(MyDataTable);
+Create a DataTable with the FTagValueDataTableRow structure as the row type, then:
 
-// Export values to a data table
-Subsystem->ExportToDataTable(MyDataTable);
+```cpp
+// Create a data asset that references the data table
+UGameplayTagValueDataAsset* DataAsset = NewObject<UGameplayTagValueDataAsset>(GetTransientPackage());
+DataAsset->DataTables.Add(MyDataTable);
+DataAsset->RepositoryName = "MyRepository";
+DataAsset->bAutoRegister = true; // Will automatically register on game start
+
+// Register with the subsystem manually if needed
+DataAsset->RegisterToSubsystem(Subsystem);
 ```
+
+## Repository System
+
+The system uses a priority-based repository architecture:
+
+1. **Config Repository** (Priority 200): For configuration-based values that should override defaults
+2. **Default Repository** (Priority 100): The built-in default repository for general use
+3. **Runtime Repository** (Priority 50): For values that change during gameplay
+
+When getting a value, the system checks repositories in order of priority (highest first). When setting a value without specifying a repository, it uses the highest priority repository available.
 
 ## Implementing UTagValueInterface
 
@@ -165,170 +209,62 @@ public:
     virtual bool HasTagValue(FGameplayTag Tag) const override;
     virtual bool GetBoolValue(FGameplayTag Tag, bool DefaultValue = false) const override;
     virtual int32 GetIntValue(FGameplayTag Tag, int32 DefaultValue = 0) const override;
-    virtual double GetFloatValue(FGameplayTag Tag, double DefaultValue = 0.0) const override;
+    virtual float GetFloatValue(FGameplayTag Tag, float DefaultValue = 0.0f) const override;
+    virtual FString GetStringValue(FGameplayTag Tag, const FString& DefaultValue = "") const override;
     virtual FTransform GetTransformValue(FGameplayTag Tag, const FTransform& DefaultValue = FTransform::Identity) const override;
-    virtual FSoftClassPath GetClassValue(FGameplayTag Tag, const FSoftClassPath& DefaultValue = FSoftClassPath()) const override;
-    virtual FSoftObjectPath GetObjectValue(FGameplayTag Tag, const FSoftObjectPath& DefaultValue = FSoftObjectPath()) const override;
+    virtual TSoftClassPtr<UObject> GetClassValue(FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue = nullptr) const override;
+    virtual TSoftObjectPtr<UObject> GetObjectValue(FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue = nullptr) const override;
 };
 ```
 
-## Repository Options
+## Value Types
 
-### Memory Repository
-
-The default memory repository provides a simple in-memory storage for tag values:
+The system supports the following value types through inheritance:
 
 ```cpp
-// Create a memory repository
-TSharedPtr<FMemoryTagValueRepository> MemoryRepo = MakeShared<FMemoryTagValueRepository>(FName(TEXT("MyMemoryRepo")), 100);
-
-// Register with the subsystem
-Subsystem->RegisterRepository(MemoryRepo);
-```
-
-### Component Repository
-
-The TagValueRepositoryComponent provides an actor component implementation of the repository interface:
-
-```cpp
-// Add the component in C++
-UTagValueRepositoryComponent* TagRepo = MyActor->CreateDefaultSubobject<UTagValueRepositoryComponent>(TEXT("TagValueRepository"));
-
-// Or add it in the editor to any actor
-// The component will automatically register with the subsystem on BeginPlay if bRegisterToSubsystem is true
-```
-
-## Data Flow
-
-### Value Setting Flow
-
-1. User calls SetTagValue through Blueprint or C++
-2. Subsystem validates tag and value
-3. Value is converted to appropriate TTagValueHolder
-4. Value is stored in the target repository
-5. Change notification is broadcast to observers
-
-### Value Retrieval Flow
-
-1. User requests value via GetTagValue
-2. Subsystem checks if context object implements UTagValueInterface
-3. If context object has the value, return it
-4. Otherwise, check repositories in priority order
-5. If not found, check parent tags (hierarchical inheritance)
-6. If still not found, return default value
-
-## Technical Implementation Details
-
-### Type Erasure Pattern
-
-```cpp
-class ITagValueHolder
+// Base abstract struct
+struct FBaseTagValue
 {
-public:
-    virtual ~ITagValueHolder() = default;
-    virtual void* GetValuePtr() = 0;
-    virtual FName GetValueTypeName() const = 0;
-    virtual TSharedPtr<ITagValueHolder> Clone() const = 0;
-    virtual bool IsValid() const = 0;
+    virtual ~FBaseTagValue() {}
+    virtual ETagValueType GetType() const = 0;
+    virtual bool Equals(const FBaseTagValue& Other) const = 0;
+    // Other virtual methods...
 };
 
-template<typename T>
-class TTagValueHolder : public ITagValueHolder
+// Concrete implementations
+struct FBoolTagValue : public FBaseTagValue
 {
-public:
-    TTagValueHolder(const T& InValue) : Value(InValue) {}
-    
-    void* GetValuePtr() override { return &Value; }
-    FName GetValueTypeName() const override { return TBaseStructure<T>::Get()->GetFName(); }
-    TSharedPtr<ITagValueHolder> Clone() const override { return MakeShared<TTagValueHolder<T>>(Value); }
-    bool IsValid() const override { return true; }
-    
-    T Value;
+    bool Value;
+    // Implementation...
 };
-```
 
-### Repository Pattern
-
-```cpp
-class ITagValueRepository
+struct FIntTagValue : public FBaseTagValue
 {
-public:
-    virtual ~ITagValueRepository() = default;
-    virtual bool HasValue(FGameplayTag Tag) const = 0;
-    virtual TSharedPtr<ITagValueHolder> GetValue(FGameplayTag Tag) const = 0;
-    virtual void SetValue(FGameplayTag Tag, TSharedPtr<ITagValueHolder> Value) = 0;
-    virtual void RemoveValue(FGameplayTag Tag) = 0;
-    virtual void ClearAllValues() = 0;
-    virtual TArray<FGameplayTag> GetAllTags() const = 0;
-    virtual FName GetRepositoryName() const = 0;
-    virtual int32 GetPriority() const = 0;
+    int32 Value;
+    // Implementation...
 };
-```
 
-### Hierarchical Inheritance
-
-```cpp
-bool UGameplayTagValueSubsystem::GetTagValue(FGameplayTag Tag, TSharedPtr<ITagValueHolder>& OutValue)
+struct FFloatTagValue : public FBaseTagValue
 {
-    // Check for exact match first
-    if (TryGetValueFromRepositories(Tag, OutValue))
-    {
-        return true;
-    }
-    
-    // Check parent tags (hierarchical fallback)
-    FGameplayTag ParentTag = Tag.RequestDirectParent();
-    while (ParentTag.IsValid())
-    {
-        if (TryGetValueFromRepositories(ParentTag, OutValue))
-        {
-            return true;
-        }
-        ParentTag = ParentTag.RequestDirectParent();
-    }
-    
-    return false;
-}
-```
-
-### Blueprint Integration
-
-```cpp
-class UGameplayTagValueFunctionLibrary : public UBlueprintFunctionLibrary
-{
-    GENERATED_BODY()
-    
-    UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static bool GetBoolTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool DefaultValue = false, UObject* Context = nullptr);
-    
-    // Similar for other types
+    float Value;
+    // Implementation...
 };
+
+struct FStringTagValue : public FBaseTagValue
+{
+    FString Value;
+    // Implementation...
+};
+
+// And so on for other types...
 ```
 
-## Documentation
+## Module Initialization
 
-### API Documentation
-- Public API reference
-- Type conversion rules
-- Blueprint node documentation
-- Repository management
+The module automatically performs the following setup during initialization:
 
-### Usage Guides
-- Getting started guide
-- Data Table setup guide
-- Best practices and performance tips
-- Migration guide from primitive systems
+1. Registers custom Blueprint nodes for tag value operations
+2. Creates and registers the default repository structure (Config, Default, Runtime)
+3. Loads and registers any data assets configured for auto-registration
 
-### Architecture Documentation
-- System overview
-- Component diagrams
-- Extension points
-- Repository implementation guide
-
-## Future Roadmap
-
-- Additional repository implementations (SaveGame, Config, etc.)
-- Enhanced editor tools for tag value management
-- Runtime replication support for multiplayer
-- Integration with Gameplay Ability System
-- Performance optimizations for large-scale usage
+This ensures the system is ready to use as soon as the game starts without requiring manual setup.

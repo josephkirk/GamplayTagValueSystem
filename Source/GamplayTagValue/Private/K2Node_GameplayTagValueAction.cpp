@@ -85,9 +85,15 @@ void UK2Node_GameplayTagValueAction::ExpandNode(FKismetCompilerContext& Compiler
     
     // Find the value pin to determine the function to call
     UEdGraphPin* ValuePin = FindPin(GetValuePinName());
-    if (!ValuePin || ValuePin->LinkedTo.Num() == 0)
+    if (!ValuePin)
     {
-        // No connections to determine the type, use a default function
+        CompilerContext.MessageLog.Error(*LOCTEXT("MissingValuePin", "@@: Value pin is missing").ToString(), this);
+        return;
+    }
+    
+    // Check if the value pin is connected
+    if (ValuePin->LinkedTo.Num() == 0)
+    {
         CompilerContext.MessageLog.Error(*LOCTEXT("NoValueConnection", "@@: Value pin must be connected to determine the type").ToString(), this);
         return;
     }
@@ -96,18 +102,28 @@ void UK2Node_GameplayTagValueAction::ExpandNode(FKismetCompilerContext& Compiler
     FName FunctionName = GetFunctionNameForValueType(ValuePin);
     if (FunctionName == NAME_None)
     {
-        CompilerContext.MessageLog.Error(*LOCTEXT("UnsupportedValueType", "@@: Unsupported value type").ToString(), this);
+        CompilerContext.MessageLog.Error(*FText::Format(LOCTEXT("UnsupportedValueType", "@@: Unsupported value type: {0}"), 
+            FText::FromString(ValuePin->PinType.PinCategory.ToString())).ToString(), this);
         return;
     }
     
     // Create the function call node
     UK2Node_CallFunction* FunctionNode = CreateFunctionCallNode(CompilerContext, SourceGraph, FunctionName);
+    if (!FunctionNode)
+    {
+        CompilerContext.MessageLog.Error(*LOCTEXT("FailedToCreateFunctionNode", "@@: Failed to create function call node").ToString(), this);
+        return;
+    }
     
     // Connect the common pins
     ConnectCommonPins(CompilerContext, SourceGraph, FunctionNode);
     
     // Move the connections from this node to the function call node
-    MovePinLinksToIntermediate(CompilerContext, ValuePin, FunctionNode->FindPin(GetValuePinName()));
+    UEdGraphPin* FunctionValuePin = FunctionNode->FindPin(GetValuePinName());
+    if (ValuePin && FunctionValuePin)
+    {
+        MovePinLinksToIntermediate(CompilerContext, ValuePin, FunctionValuePin);
+    }
     
     // Remove this node
     BreakAllNodeLinks();
@@ -161,21 +177,46 @@ void UK2Node_GameplayTagValueAction::NotifyPinConnectionListChanged(UEdGraphPin*
     Super::NotifyPinConnectionListChanged(Pin);
     
     // If the value pin connection changed, update the pin types
-    if (Pin && Pin->PinName == GetValuePinName() && Pin->LinkedTo.Num() > 0)
+    if (Pin && Pin->PinName == GetValuePinName())
     {
-        UEdGraphPin* LinkedPin = Pin->LinkedTo[0];
-        if (LinkedPin)
+        if (Pin->LinkedTo.Num() > 0)
         {
-            // Update the value pin type to match the linked pin
-            Pin->PinType = LinkedPin->PinType;
+            UEdGraphPin* LinkedPin = Pin->LinkedTo[0];
+            if (LinkedPin)
+            {
+                // Update the value pin type to match the linked pin
+                Pin->PinType = LinkedPin->PinType;
+                
+                // If this is a Get node, also update the default value pin type
+                if (IsGetNode())
+                {
+                    UEdGraphPin* DefaultValuePin = FindPin(GetDefaultValuePinName());
+                    if (DefaultValuePin)
+                    {
+                        DefaultValuePin->PinType = LinkedPin->PinType;
+                    }
+                }
+                
+                // Notify the graph that the node has changed
+                GetGraph()->NotifyGraphChanged();
+            }
+        }
+        else
+        {
+            // Reset to wildcard if disconnected
+            Pin->PinType.PinCategory = UEdGraphSchema_K2::PC_Wildcard;
+            Pin->PinType.PinSubCategory = NAME_None;
+            Pin->PinType.PinSubCategoryObject = nullptr;
             
-            // If this is a Get node, also update the default value pin type
+            // If this is a Get node, also reset the default value pin type
             if (IsGetNode())
             {
                 UEdGraphPin* DefaultValuePin = FindPin(GetDefaultValuePinName());
                 if (DefaultValuePin)
                 {
-                    DefaultValuePin->PinType = LinkedPin->PinType;
+                    DefaultValuePin->PinType.PinCategory = UEdGraphSchema_K2::PC_Wildcard;
+                    DefaultValuePin->PinType.PinSubCategory = NAME_None;
+                    DefaultValuePin->PinType.PinSubCategoryObject = nullptr;
                 }
             }
             
@@ -218,6 +259,22 @@ FName UK2Node_GameplayTagValueAction::GetValueTypeFromPinType(const FEdGraphPinT
     else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Float)
     {
         return TEXT("Float");
+    }
+    else if (PinType.PinCategory == UEdGraphSchema_K2::PC_String)
+    {
+        return TEXT("String");
+    }
+    else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Name)
+    {
+        return TEXT("Name");
+    }
+    else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Struct && PinType.PinSubCategoryObject == FVector::StaticStruct())
+    {
+        return TEXT("Vector");
+    }
+    else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Struct && PinType.PinSubCategoryObject == FRotator::StaticStruct())
+    {
+        return TEXT("Rotator");
     }
     else if (PinType.PinCategory == UEdGraphSchema_K2::PC_Struct && PinType.PinSubCategoryObject == FTransform::StaticStruct())
     {
@@ -356,6 +413,10 @@ FName UK2Node_GetGameplayTagValue::GetFunctionNameForValueType(FName ValueType) 
         { TEXT("Bool"), TEXT("GetBoolTagValue") },
         { TEXT("Int"), TEXT("GetIntTagValue") },
         { TEXT("Float"), TEXT("GetFloatTagValue") },
+        { TEXT("String"), TEXT("GetStringTagValue") },
+        { TEXT("Name"), TEXT("GetNameTagValue") },
+        { TEXT("Vector"), TEXT("GetVectorTagValue") },
+        { TEXT("Rotator"), TEXT("GetRotatorTagValue") },
         { TEXT("Transform"), TEXT("GetTransformTagValue") },
         { TEXT("Class"), TEXT("GetClassTagValue") },
         { TEXT("Object"), TEXT("GetObjectTagValue") }
@@ -395,6 +456,10 @@ FName UK2Node_SetGameplayTagValue::GetFunctionNameForValueType(FName ValueType) 
         { TEXT("Bool"), TEXT("SetBoolTagValue") },
         { TEXT("Int"), TEXT("SetIntTagValue") },
         { TEXT("Float"), TEXT("SetFloatTagValue") },
+        { TEXT("String"), TEXT("SetStringTagValue") },
+        { TEXT("Name"), TEXT("SetNameTagValue") },
+        { TEXT("Vector"), TEXT("SetVectorTagValue") },
+        { TEXT("Rotator"), TEXT("SetRotatorTagValue") },
         { TEXT("Transform"), TEXT("SetTransformTagValue") },
         { TEXT("Class"), TEXT("SetClassTagValue") },
         { TEXT("Object"), TEXT("SetObjectTagValue") }

@@ -82,7 +82,7 @@ float UGameplayTagValueFunctionLibrary::GetFloatTagValue(const UObject* WorldCon
     }
     
     bSuccess = Subsystem->HasTagValue(Tag, Context);
-    return static_cast<float>(Subsystem->GetFloatValue(Tag, DefaultValue, Context));
+    return Subsystem->GetFloatValue(Tag, DefaultValue, Context);
 }
 
 bool UGameplayTagValueFunctionLibrary::SetFloatTagValue(const UObject* WorldContextObject, FGameplayTag Tag, float Value, FName RepositoryName)
@@ -94,6 +94,30 @@ bool UGameplayTagValueFunctionLibrary::SetFloatTagValue(const UObject* WorldCont
     }
     
     return Subsystem->SetFloatValue(Tag, Value, RepositoryName);
+}
+
+FString UGameplayTagValueFunctionLibrary::GetStringTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FString& DefaultValue, UObject* Context, bool& bSuccess)
+{
+    UGameplayTagValueSubsystem* Subsystem = GetGameplayTagValueSubsystem(WorldContextObject);
+    if (!Subsystem)
+    {
+        bSuccess = false;
+        return DefaultValue;
+    }
+    
+    bSuccess = Subsystem->HasTagValue(Tag, Context);
+    return Subsystem->GetStringValue(Tag, DefaultValue, Context);
+}
+
+bool UGameplayTagValueFunctionLibrary::SetStringTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FString& Value, FName RepositoryName)
+{
+    UGameplayTagValueSubsystem* Subsystem = GetGameplayTagValueSubsystem(WorldContextObject);
+    if (!Subsystem)
+    {
+        return false;
+    }
+    
+    return Subsystem->SetStringValue(Tag, Value, RepositoryName);
 }
 
 FTransform UGameplayTagValueFunctionLibrary::GetTransformTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FTransform& DefaultValue, UObject* Context, bool& bSuccess)
@@ -130,8 +154,7 @@ TSoftClassPtr<UObject> UGameplayTagValueFunctionLibrary::GetClassTagValue(const 
     }
     
     bSuccess = Subsystem->HasTagValue(Tag, Context);
-    FSoftClassPath ClassPath = Subsystem->GetClassValue(Tag, FSoftClassPath(DefaultValue.ToString()), Context);
-    return TSoftClassPtr<UObject>(ClassPath.ToString());
+    return Subsystem->GetClassValue(Tag, DefaultValue, Context);
 }
 
 bool UGameplayTagValueFunctionLibrary::SetClassTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftClassPtr<UObject> Value, FName RepositoryName)
@@ -142,7 +165,7 @@ bool UGameplayTagValueFunctionLibrary::SetClassTagValue(const UObject* WorldCont
         return false;
     }
     
-    return Subsystem->SetClassValue(Tag, FSoftClassPath(Value.ToString()), RepositoryName);
+    return Subsystem->SetClassValue(Tag, Value, RepositoryName);
 }
 
 TSoftObjectPtr<UObject> UGameplayTagValueFunctionLibrary::GetObjectTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue, UObject* Context, bool& bSuccess)
@@ -155,8 +178,7 @@ TSoftObjectPtr<UObject> UGameplayTagValueFunctionLibrary::GetObjectTagValue(cons
     }
     
     bSuccess = Subsystem->HasTagValue(Tag, Context);
-    FSoftObjectPath ObjectPath = Subsystem->GetObjectValue(Tag, FSoftObjectPath(DefaultValue.ToString()), Context);
-    return TSoftObjectPtr<UObject>(ObjectPath.ToString());
+    return Subsystem->GetObjectValue(Tag, DefaultValue, Context);
 }
 
 bool UGameplayTagValueFunctionLibrary::SetObjectTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftObjectPtr<UObject> Value, FName RepositoryName)
@@ -167,7 +189,7 @@ bool UGameplayTagValueFunctionLibrary::SetObjectTagValue(const UObject* WorldCon
         return false;
     }
     
-    return Subsystem->SetObjectValue(Tag, FSoftObjectPath(Value.ToString()), RepositoryName);
+    return Subsystem->SetObjectValue(Tag, Value, RepositoryName);
 }
 
 bool UGameplayTagValueFunctionLibrary::RemoveTagValue(const UObject* WorldContextObject, FGameplayTag Tag, FName RepositoryName)
@@ -181,13 +203,14 @@ bool UGameplayTagValueFunctionLibrary::RemoveTagValue(const UObject* WorldContex
     return Subsystem->RemoveTagValue(Tag, RepositoryName);
 }
 
-void UGameplayTagValueFunctionLibrary::ClearAllTagValues(const UObject* WorldContextObject, FName RepositoryName)
+bool UGameplayTagValueFunctionLibrary::ClearAllTagValues(const UObject* WorldContextObject, FName RepositoryName)
 {
     UGameplayTagValueSubsystem* Subsystem = GetGameplayTagValueSubsystem(WorldContextObject);
     if (!Subsystem)
     {
-        return;
+        return false;
     }
     
     Subsystem->ClearAllValues(RepositoryName);
+    return true;
 }

@@ -27,13 +27,13 @@
 
 ### Day 1-2: Complex Types 
 - [x] Implement object reference support
-  - [x] SoftObjectPath handling
-  - [x] SoftClassPath handling
+  - [x] SoftObjectPtr handling (replaced SoftObjectPath)
+  - [x] SoftClassPtr handling (replaced SoftClassPath)
   - [x] Object pointer validation
   - [x] Safe type casting
 
 ### Day 3: Data Table Integration 
-- [x] Create FGameplayTagValueTableRow
+- [x] Create FTagValueDataTableRow (replaced FGameplayTagValueTableRow)
   - [x] Define table structure
   - [x] Add type discrimination
   - [x] Implement row validation
@@ -91,6 +91,13 @@
   - [x] Create OnTagValueChanged delegate
   - [x] Add broadcasting mechanism
 
+### Inheritance-Based Value System
+- [x] Implement FBaseTagValue inheritance
+  - [x] Create base abstract struct with virtual methods
+  - [x] Implement concrete value type classes
+  - [x] Update subsystem to work with the inheritance system
+  - [x] Update GameplayTagValueDataAsset to use the new system
+
 ## Phase 5: Remaining Tasks
 
 ### Testing
@@ -115,8 +122,8 @@
   - [ ] Database-backed repository
 
 ### New Value Types Support
-- [ ] Implement additional value types
-  - [ ] String values
+- [x] Implement additional value types
+  - [x] String values (added in FBaseTagValue inheritance system)
   - [ ] Vector/Rotator values
   - [ ] Color values
   - [ ] Array/Map container support
@@ -158,7 +165,11 @@
 - [ ] Batch operations for performance
 
 ## Notes
-- Maintain compatibility with existing `FTagValue` struct
+- FTagValue and FTagValueMapping dependencies removed and replaced with FBaseTagValue inheritance system
+- Updated GameplayTagValueDataAsset to work with the new system
+- Converted FSoftClassPath to TSoftClassPtr and FSoftObjectPath to TSoftObjectPtr for better UE5 compatibility
+- Added string value support in the new system
+- Updated all API methods to work with the new tag value types
 - Ensure proper cleanup of resources
 - Consider thread safety for async operations
 - Keep memory overhead minimal

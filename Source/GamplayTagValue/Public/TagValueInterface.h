@@ -3,7 +3,9 @@
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
 #include "GameplayTags.h"
-#include "TagValue.h"
+#include "TagValueBase.h"
+#include "TagValueContainer.h"
+#include "TagValueInterface.generated.h"
 
 /**
  * Interface for the type erasure pattern that holds different value types
@@ -101,7 +103,15 @@ UINTERFACE(BlueprintType, meta=(CannotImplementInterfaceInBlueprint))
 class GAMPLAYTAGVALUE_API UTagValueInterface : public UInterface
 {
     GENERATED_BODY()
+};
 
+/**
+ * Implementation class for the UTagValueInterface interface
+ */
+class GAMPLAYTAGVALUE_API ITagValueInterface
+{
+    GENERATED_BODY()
+    
 public:
     /** Check if this object has a value for the given tag */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
@@ -117,7 +127,11 @@ public:
     
     /** Get a float value for the given tag */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    virtual double GetFloatValue(FGameplayTag Tag, double DefaultValue = 0.0) const = 0;
+    virtual float GetFloatValue(FGameplayTag Tag, float DefaultValue = 0.0f) const = 0;
+    
+    /** Get a string value for the given tag */
+    UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+    virtual FString GetStringValue(FGameplayTag Tag, const FString& DefaultValue = "") const = 0;
     
     /** Get a transform value for the given tag */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
@@ -125,9 +139,9 @@ public:
     
     /** Get a class value for the given tag */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    virtual FSoftClassPath GetClassValue(FGameplayTag Tag, const FSoftClassPath& DefaultValue = FSoftClassPath()) const = 0;
+    virtual TSoftClassPtr<UObject> GetClassValue(FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue = nullptr) const = 0;
     
     /** Get an object value for the given tag */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    virtual FSoftObjectPath GetObjectValue(FGameplayTag Tag, const FSoftObjectPath& DefaultValue = FSoftObjectPath()) const = 0;
+    virtual TSoftObjectPtr<UObject> GetObjectValue(FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue = nullptr) const = 0;
 };
