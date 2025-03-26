@@ -1,4 +1,5 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+
+
 
 #include "GamplayTagValue.h"
 #include "K2Node_GameplayTagValueAction.h"
