@@ -5,6 +5,7 @@
 #include "Engine/DataTable.h"
 #include "GameplayTags.h"
 #include "TagValueBase.h"
+#include "TagValueTypes.h"
 #include "GameplayTagValueDataAsset.generated.h"
 
 /**
@@ -17,39 +18,39 @@ struct GAMPLAYTAGVALUE_API FTagValueDataTableRow : public FTableRowBase
     GENERATED_USTRUCT_BODY()
 
     /** The gameplay tag this value is associated with */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values")
     FGameplayTag Tag;
 
     /** Boolean value */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Bool", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values", meta=(EditCondition="ValueType == ETagValueType::Bool", EditConditionHides))
     bool BoolValue = false;
 
     /** Integer value */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Int", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values", meta=(EditCondition="ValueType == ETagValueType::Int", EditConditionHides))
     int32 IntValue = 0;
 
     /** Float value */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Float", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values", meta=(EditCondition="ValueType == ETagValueType::Float", EditConditionHides))
     float FloatValue = 0.0f;
 
     /** String value */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::String", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values", meta=(EditCondition="ValueType == ETagValueType::String", EditConditionHides))
     FString StringValue;
 
     /** Transform value */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Transform", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values", meta=(EditCondition="ValueType == ETagValueType::Transform", EditConditionHides))
     FTransform TransformValue;
 
     /** Class value */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Class", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values", meta=(EditCondition="ValueType == ETagValueType::Class", EditConditionHides))
     TSoftClassPtr<UObject> ClassValue;
 
     /** Object value */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value", meta=(EditCondition="ValueType == ETagValueType::Object", EditConditionHides))
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values", meta=(EditCondition="ValueType == ETagValueType::Object", EditConditionHides))
     TSoftObjectPtr<UObject> ObjectValue;
 
     /** Type of value to use */
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value")
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Values")
     ETagValueType ValueType = ETagValueType::Bool;
 
     /** Creates a shared pointer to the appropriate FBaseTagValue subclass based on the ValueType */

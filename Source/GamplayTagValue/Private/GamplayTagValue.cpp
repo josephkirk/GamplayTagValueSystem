@@ -1,6 +1,3 @@
-
-
-
 #include "GamplayTagValue.h"
 #include "K2Node_GameplayTagValueAction.h"
 #include "BlueprintNodeSpawner.h"
@@ -38,30 +35,13 @@ void FGamplayTagValueModule::ShutdownModule()
 
 void FGamplayTagValueModule::RegisterBlueprintNodeFactories()
 {
-	// Register the blueprint node factories
-	BlueprintNodeFactoriesHandle = FKismetCompilerContext::RegisterBlueprintNodeFactory(
-		FBlueprintNodeFactory([](UClass* InClass, UObject* InOuter, FName InName)
-		{
-			UBlueprint* BP = Cast<UBlueprint>(InOuter);
-			if (BP && 
-				(InClass == UK2Node_GetGameplayTagValue::StaticClass() ||
-				InClass == UK2Node_SetGameplayTagValue::StaticClass()))
-			{
-				return NewObject<UK2Node>(BP, InClass, InName, RF_Transactional);
-			}
-			return nullptr;
-		})
-	);
+	// This function intentionally left empty as K2Node classes register themselves
+	// via their GetMenuActions() method when the BlueprintActionDatabase is initialized
 }
 
 void FGamplayTagValueModule::UnregisterBlueprintNodeFactories()
 {
-	// Unregister the blueprint node factory
-	if (BlueprintNodeFactoriesHandle.IsValid())
-	{
-		FKismetCompilerContext::UnregisterBlueprintNodeFactory(BlueprintNodeFactoriesHandle);
-		BlueprintNodeFactoriesHandle.Reset();
-	}
+	// No explicit unregistration needed as K2Node classes handle their own registration
 }
 
 void FGamplayTagValueModule::InitializeDefaultRepositories()

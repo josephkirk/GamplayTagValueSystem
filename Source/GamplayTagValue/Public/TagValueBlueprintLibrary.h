@@ -25,7 +25,7 @@ public:
 
 	/** Get a boolean value from the container */
 	UFUNCTION(BlueprintPure, Category = "TagValue")
-	static bool GetBoolValue(const FTagValueContainer& Container, FGameplayTag Tag, bool DefaultValue = false, bool& Success = false);
+	static bool GetBoolValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, bool DefaultValue);
 
 	// Integer value functions
 
@@ -35,7 +35,7 @@ public:
 
 	/** Get an integer value from the container */
 	UFUNCTION(BlueprintPure, Category = "TagValue")
-	static int32 GetIntValue(const FTagValueContainer& Container, FGameplayTag Tag, int32 DefaultValue = 0, bool& Success = false);
+	static int32 GetIntValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, int32 DefaultValue);
 
 	// Float value functions
 
@@ -45,7 +45,7 @@ public:
 
 	/** Get a float value from the container */
 	UFUNCTION(BlueprintPure, Category = "TagValue")
-	static float GetFloatValue(const FTagValueContainer& Container, FGameplayTag Tag, float DefaultValue = 0.0f, bool& Success = false);
+	static float GetFloatValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, float DefaultValue);
 
 	// String value functions
 
@@ -55,7 +55,7 @@ public:
 
 	/** Get a string value from the container */
 	UFUNCTION(BlueprintPure, Category = "TagValue")
-	static FString GetStringValue(const FTagValueContainer& Container, FGameplayTag Tag, const FString& DefaultValue = "", bool& Success = false);
+	static FString GetStringValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, const FString& DefaultValue);
 
 	// Transform value functions
 
@@ -65,7 +65,7 @@ public:
 
 	/** Get a transform value from the container */
 	UFUNCTION(BlueprintPure, Category = "TagValue")
-	static FTransform GetTransformValue(const FTagValueContainer& Container, FGameplayTag Tag, const FTransform& DefaultValue = FTransform::Identity, bool& Success = false);
+	static FTransform GetTransformValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, const FTransform& DefaultValue);
 
 	// Class value functions
 
@@ -75,7 +75,7 @@ public:
 
 	/** Get a class value from the container */
 	UFUNCTION(BlueprintPure, Category = "TagValue")
-	static TSoftClassPtr<UObject> GetClassValue(const FTagValueContainer& Container, FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue = nullptr, bool& Success = false);
+	static TSoftClassPtr<UObject> GetClassValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue);
 
 	// Object value functions
 
@@ -85,7 +85,7 @@ public:
 
 	/** Get an object value from the container */
 	UFUNCTION(BlueprintPure, Category = "TagValue")
-	static TSoftObjectPtr<UObject> GetObjectValue(const FTagValueContainer& Container, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue = nullptr, bool& Success = false);
+	static TSoftObjectPtr<UObject> GetObjectValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue);
 
 	// General container functions
 

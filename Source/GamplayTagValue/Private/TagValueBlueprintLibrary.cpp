@@ -6,7 +6,7 @@ void UTagValueBlueprintLibrary::SetBoolValue(FTagValueContainer& Container, FGam
 	Container.SetValue<FBoolTagValue>(Tag, FBoolTagValue(Value));
 }
 
-bool UTagValueBlueprintLibrary::GetBoolValue(const FTagValueContainer& Container, FGameplayTag Tag, bool DefaultValue, bool& Success)
+bool UTagValueBlueprintLibrary::GetBoolValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, bool DefaultValue)
 {
 	FBoolTagValue TypedValue;
 	Success = Container.GetValue<FBoolTagValue>(Tag, TypedValue);
@@ -19,7 +19,7 @@ void UTagValueBlueprintLibrary::SetIntValue(FTagValueContainer& Container, FGame
 	Container.SetValue<FIntTagValue>(Tag, FIntTagValue(Value));
 }
 
-int32 UTagValueBlueprintLibrary::GetIntValue(const FTagValueContainer& Container, FGameplayTag Tag, int32 DefaultValue, bool& Success)
+int32 UTagValueBlueprintLibrary::GetIntValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, int32 DefaultValue)
 {
 	FIntTagValue TypedValue;
 	Success = Container.GetValue<FIntTagValue>(Tag, TypedValue);
@@ -32,7 +32,7 @@ void UTagValueBlueprintLibrary::SetFloatValue(FTagValueContainer& Container, FGa
 	Container.SetValue<FFloatTagValue>(Tag, FFloatTagValue(Value));
 }
 
-float UTagValueBlueprintLibrary::GetFloatValue(const FTagValueContainer& Container, FGameplayTag Tag, float DefaultValue, bool& Success)
+float UTagValueBlueprintLibrary::GetFloatValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, float DefaultValue)
 {
 	FFloatTagValue TypedValue;
 	Success = Container.GetValue<FFloatTagValue>(Tag, TypedValue);
@@ -45,7 +45,7 @@ void UTagValueBlueprintLibrary::SetStringValue(FTagValueContainer& Container, FG
 	Container.SetValue<FStringTagValue>(Tag, FStringTagValue(Value));
 }
 
-FString UTagValueBlueprintLibrary::GetStringValue(const FTagValueContainer& Container, FGameplayTag Tag, const FString& DefaultValue, bool& Success)
+FString UTagValueBlueprintLibrary::GetStringValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, const FString& DefaultValue)
 {
 	FStringTagValue TypedValue;
 	Success = Container.GetValue<FStringTagValue>(Tag, TypedValue);
@@ -58,7 +58,7 @@ void UTagValueBlueprintLibrary::SetTransformValue(FTagValueContainer& Container,
 	Container.SetValue<FTransformTagValue>(Tag, FTransformTagValue(Value));
 }
 
-FTransform UTagValueBlueprintLibrary::GetTransformValue(const FTagValueContainer& Container, FGameplayTag Tag, const FTransform& DefaultValue, bool& Success)
+FTransform UTagValueBlueprintLibrary::GetTransformValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, const FTransform& DefaultValue)
 {
 	FTransformTagValue TypedValue;
 	Success = Container.GetValue<FTransformTagValue>(Tag, TypedValue);
@@ -71,7 +71,7 @@ void UTagValueBlueprintLibrary::SetClassValue(FTagValueContainer& Container, FGa
 	Container.SetValue<FClassTagValue>(Tag, FClassTagValue(Value));
 }
 
-TSoftClassPtr<UObject> UTagValueBlueprintLibrary::GetClassValue(const FTagValueContainer& Container, FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue, bool& Success)
+TSoftClassPtr<UObject> UTagValueBlueprintLibrary::GetClassValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue)
 {
 	FClassTagValue TypedValue;
 	Success = Container.GetValue<FClassTagValue>(Tag, TypedValue);
@@ -84,7 +84,7 @@ void UTagValueBlueprintLibrary::SetObjectValue(FTagValueContainer& Container, FG
 	Container.SetValue<FObjectTagValue>(Tag, FObjectTagValue(Value));
 }
 
-TSoftObjectPtr<UObject> UTagValueBlueprintLibrary::GetObjectValue(const FTagValueContainer& Container, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue, bool& Success)
+TSoftObjectPtr<UObject> UTagValueBlueprintLibrary::GetObjectValue(const FTagValueContainer& Container, bool& Success, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue)
 {
 	FObjectTagValue TypedValue;
 	Success = Container.GetValue<FObjectTagValue>(Tag, TypedValue);

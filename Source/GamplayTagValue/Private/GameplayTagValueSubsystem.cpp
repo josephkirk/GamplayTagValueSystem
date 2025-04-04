@@ -612,29 +612,29 @@ bool UGameplayTagValueSubsystem::SetTypedValue(FGameplayTag Tag, const typename 
 }
 
 // Template specializations to ensure they are compiled
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<bool>(UObject*, FGameplayTag, bool&, const bool&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<int32>(UObject*, FGameplayTag, int32&, const int32&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<float>(UObject*, FGameplayTag, float&, const float&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<FString>(UObject*, FGameplayTag, FString&, const FString&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<FTransform>(UObject*, FGameplayTag, FTransform&, const FTransform&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<TSoftClassPtr<UObject>>(UObject*, FGameplayTag, TSoftClassPtr<UObject>&, const TSoftClassPtr<UObject>&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromContext<TSoftObjectPtr<UObject>>(UObject*, FGameplayTag, TSoftObjectPtr<UObject>&, const TSoftObjectPtr<UObject>&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromContext<bool>(UObject*, FGameplayTag, bool&, const bool&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromContext<int32>(UObject*, FGameplayTag, int32&, const int32&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromContext<float>(UObject*, FGameplayTag, float&, const float&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromContext<FString>(UObject*, FGameplayTag, FString&, const FString&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromContext<FTransform>(UObject*, FGameplayTag, FTransform&, const FTransform&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromContext<TSoftClassPtr<UObject>>(UObject*, FGameplayTag, TSoftClassPtr<UObject>&, const TSoftClassPtr<UObject>&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromContext<TSoftObjectPtr<UObject>>(UObject*, FGameplayTag, TSoftObjectPtr<UObject>&, const TSoftObjectPtr<UObject>&) const;
 
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FBoolTagValue>(FGameplayTag, bool&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FIntTagValue>(FGameplayTag, int32&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FFloatTagValue>(FGameplayTag, float&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FStringTagValue>(FGameplayTag, FString&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FTransformTagValue>(FGameplayTag, FTransform&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FClassTagValue>(FGameplayTag, TSoftClassPtr<UObject>&) const;
-template bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FObjectTagValue>(FGameplayTag, TSoftObjectPtr<UObject>&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FBoolTagValue>(FGameplayTag, bool&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FIntTagValue>(FGameplayTag, int32&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FFloatTagValue>(FGameplayTag, float&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FStringTagValue>(FGameplayTag, FString&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FTransformTagValue>(FGameplayTag, FTransform&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FClassTagValue>(FGameplayTag, TSoftClassPtr<UObject>&) const;
+bool UGameplayTagValueSubsystem::TryGetValueFromRepositories<FObjectTagValue>(FGameplayTag, TSoftObjectPtr<UObject>&) const;
 
-template bool UGameplayTagValueSubsystem::SetTypedValue<FBoolTagValue>(FGameplayTag, const bool&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FIntTagValue>(FGameplayTag, const int32&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FFloatTagValue>(FGameplayTag, const float&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FStringTagValue>(FGameplayTag, const FString&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FTransformTagValue>(FGameplayTag, const FTransform&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FClassTagValue>(FGameplayTag, const TSoftClassPtr<UObject>&, FName);
-template bool UGameplayTagValueSubsystem::SetTypedValue<FObjectTagValue>(FGameplayTag, const TSoftObjectPtr<UObject>&, FName);
+bool UGameplayTagValueSubsystem::SetTypedValue<FBoolTagValue>(FGameplayTag, const bool&, FName);
+bool UGameplayTagValueSubsystem::SetTypedValue<FIntTagValue>(FGameplayTag, const int32&, FName);
+bool UGameplayTagValueSubsystem::SetTypedValue<FFloatTagValue>(FGameplayTag, const float&, FName);
+bool UGameplayTagValueSubsystem::SetTypedValue<FStringTagValue>(FGameplayTag, const FString&, FName);
+bool UGameplayTagValueSubsystem::SetTypedValue<FTransformTagValue>(FGameplayTag, const FTransform&, FName);
+bool UGameplayTagValueSubsystem::SetTypedValue<FClassTagValue>(FGameplayTag, const TSoftClassPtr<UObject>&, FName);
+bool UGameplayTagValueSubsystem::SetTypedValue<FObjectTagValue>(FGameplayTag, const TSoftObjectPtr<UObject>&, FName);
 
 int32 UGameplayTagValueSubsystem::RegisterConfiguredDataAssets()
 {

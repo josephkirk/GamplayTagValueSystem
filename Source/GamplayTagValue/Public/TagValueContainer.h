@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameplayTags.h"
 #include "TagValueBase.h"
+#include "Templates/SharedPointer.h"
 #include "TagValueContainer.generated.h"
 
 /**
@@ -14,9 +15,9 @@ struct GAMPLAYTAGVALUE_API FTagValueContainer
 {
 	GENERATED_BODY()
 
-	/** Map of gameplay tags to tag values */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TMap<FGameplayTag, TSharedPtr<FBaseTagValue>> Values;
+	/** Array of tag-value pairs */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Tag Value")
+	TArray<FBaseTagValue> Values;
 
 	/** Default constructor */
 	FTagValueContainer() {}
@@ -29,7 +30,13 @@ struct GAMPLAYTAGVALUE_API FTagValueContainer
 	template<typename T>
 	void SetValue(FGameplayTag Tag, const T& Value)
 	{
-		Values.Add(Tag, MakeShared<T>(Value));
+		// First remove any existing value with this tag
+		RemoveValue(Tag);
+		
+		// Create a new value of the appropriate type
+		T NewValue(Value);
+		NewValue.Tag = Tag;
+		Values.Add(NewValue);
 	}
 
 	/**
@@ -41,12 +48,15 @@ struct GAMPLAYTAGVALUE_API FTagValueContainer
 	template<typename T>
 	bool GetValue(FGameplayTag Tag, T& OutValue) const
 	{
-		if (const TSharedPtr<FBaseTagValue>* BaseValue = Values.Find(Tag))
+		for (const FBaseTagValue& Value : Values)
 		{
-			if (TSharedPtr<T> TypedValue = StaticCastSharedPtr<T>(*BaseValue))
+			if (Value.Tag == Tag)
 			{
-				OutValue = *TypedValue;
-				return true;
+				if (const T* TypedValue = Value.TryCast<T>())
+				{
+					OutValue = *TypedValue;
+					return true;
+				}
 			}
 		}
 		return false;
@@ -59,7 +69,14 @@ struct GAMPLAYTAGVALUE_API FTagValueContainer
 	 */
 	bool HasValue(FGameplayTag Tag) const
 	{
-		return Values.Contains(Tag);
+		for (const FBaseTagValue& Value : Values)
+		{
+			if (Value.Tag == Tag)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -69,7 +86,15 @@ struct GAMPLAYTAGVALUE_API FTagValueContainer
 	 */
 	bool RemoveValue(FGameplayTag Tag)
 	{
-		return Values.Remove(Tag) > 0;
+		for (int32 i = 0; i < Values.Num(); i++)
+		{
+			if (Values[i].Tag == Tag)
+			{
+				Values.RemoveAt(i);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -79,7 +104,10 @@ struct GAMPLAYTAGVALUE_API FTagValueContainer
 	TArray<FGameplayTag> GetAllTags() const
 	{
 		TArray<FGameplayTag> Tags;
-		Values.GetKeys(Tags);
+		for (const FBaseTagValue& Value : Values)
+		{
+			Tags.Add(Value.Tag);
+		}
 		return Tags;
 	}
 

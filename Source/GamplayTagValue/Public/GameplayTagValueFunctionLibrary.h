@@ -45,7 +45,7 @@ public:
      * @return The bool value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static bool GetBoolTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool DefaultValue = false, UObject* Context = nullptr, bool& bSuccess = false);
+    static bool GetBoolTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, bool DefaultValue = false, UObject* Context = nullptr);
     
     /**
      * Set a bool value for the given tag
@@ -68,7 +68,7 @@ public:
      * @return The integer value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static int32 GetIntTagValue(const UObject* WorldContextObject, FGameplayTag Tag, int32 DefaultValue = 0, UObject* Context = nullptr, bool& bSuccess = false);
+    static int32 GetIntTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, int32 DefaultValue = 0, UObject* Context = nullptr);
     
     /**
      * Set an integer value for the given tag
@@ -91,7 +91,7 @@ public:
      * @return The float value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static float GetFloatTagValue(const UObject* WorldContextObject, FGameplayTag Tag, float DefaultValue = 0.0f, UObject* Context = nullptr, bool& bSuccess = false);
+    static float GetFloatTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, float DefaultValue = 0.0f, UObject* Context = nullptr);
     
     /**
      * Set a float value for the given tag
@@ -114,7 +114,7 @@ public:
      * @return The string value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static FString GetStringTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FString& DefaultValue = "", UObject* Context = nullptr, bool& bSuccess = false);
+    static FString GetStringTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, const FString& DefaultValue = "", UObject* Context = nullptr);
     
     /**
      * Set a string value for the given tag
@@ -137,7 +137,7 @@ public:
      * @return The transform value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static FTransform GetTransformTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FTransform& DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
+    static FTransform GetTransformTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, const FTransform& DefaultValue, UObject* Context = nullptr);
     
     /**
      * Set a transform value for the given tag
@@ -160,7 +160,7 @@ public:
      * @return The class value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static TSoftClassPtr<UObject> GetClassTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
+    static TSoftClassPtr<UObject> GetClassTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, TSoftClassPtr<UObject> DefaultValue, UObject* Context = nullptr);
     
     /**
      * Set a class value for the given tag
@@ -183,7 +183,7 @@ public:
      * @return The object value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static TSoftObjectPtr<UObject> GetObjectTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
+    static TSoftObjectPtr<UObject> GetObjectTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, TSoftObjectPtr<UObject> DefaultValue, UObject* Context = nullptr);
     
     /**
      * Set an object value for the given tag

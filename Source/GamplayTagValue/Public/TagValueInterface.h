@@ -135,7 +135,7 @@ public:
     
     /** Get a transform value for the given tag */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    virtual FTransform GetTransformValue(FGameplayTag Tag, const FTransform& DefaultValue = FTransform::Identity) const = 0;
+    virtual FTransform GetTransformValue(FGameplayTag Tag, const FTransform& DefaultValue) const = 0;
     
     /** Get a class value for the given tag */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
