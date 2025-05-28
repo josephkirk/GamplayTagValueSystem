@@ -1,3 +1,4 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #include "GameplayTagValueSubsystem.h"
 #include "Engine/DataTable.h"
 #include "GameplayTagValueDataAsset.h"

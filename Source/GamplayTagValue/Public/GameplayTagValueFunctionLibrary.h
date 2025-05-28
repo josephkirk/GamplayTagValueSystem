@@ -1,3 +1,4 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #pragma once
 
 #include "CoreMinimal.h"

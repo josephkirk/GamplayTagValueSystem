@@ -1,3 +1,4 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #include "TagValueBase.h"
 
 bool FBaseTagValue::Serialize(FArchive& Ar)

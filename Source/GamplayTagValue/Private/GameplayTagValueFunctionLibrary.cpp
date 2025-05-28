@@ -1,4 +1,4 @@
-#include "GameplayTagValueFunctionLibrary.h"
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.#include "GameplayTagValueFunctionLibrary.h"
 #include "GameplayTagValueSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 

@@ -1,3 +1,4 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #include "K2Node_GameplayTagValueAction.h"
 #include "BlueprintActionDatabaseRegistrar.h"
 #include "BlueprintNodeSpawner.h"

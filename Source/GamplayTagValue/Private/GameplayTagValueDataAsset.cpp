@@ -1,3 +1,4 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #include "GameplayTagValueDataAsset.h"
 #include "GameplayTagValueSubsystem.h"
 #include "Kismet/GameplayStatics.h"

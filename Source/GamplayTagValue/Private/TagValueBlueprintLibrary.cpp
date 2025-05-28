@@ -1,3 +1,4 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #include "TagValueBlueprintLibrary.h"
 
 // Boolean value functions
