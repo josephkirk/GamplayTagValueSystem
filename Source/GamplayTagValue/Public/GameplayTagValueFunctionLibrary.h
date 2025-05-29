@@ -1,9 +1,11 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "GameplayTags.h"
-#include "TagValue.h"
+#include "TagValueBase.h"
+#include "TagValueContainer.h"
 #include "GameplayTagValueFunctionLibrary.generated.h"
 
 /**
@@ -44,7 +46,7 @@ public:
      * @return The bool value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static bool GetBoolTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool DefaultValue = false, UObject* Context = nullptr, bool& bSuccess = false);
+    static bool GetBoolTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, bool DefaultValue = false, UObject* Context = nullptr);
     
     /**
      * Set a bool value for the given tag
@@ -67,7 +69,7 @@ public:
      * @return The integer value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static int32 GetIntTagValue(const UObject* WorldContextObject, FGameplayTag Tag, int32 DefaultValue = 0, UObject* Context = nullptr, bool& bSuccess = false);
+    static int32 GetIntTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, int32 DefaultValue = 0, UObject* Context = nullptr);
     
     /**
      * Set an integer value for the given tag
@@ -90,7 +92,7 @@ public:
      * @return The float value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static float GetFloatTagValue(const UObject* WorldContextObject, FGameplayTag Tag, float DefaultValue = 0.0f, UObject* Context = nullptr, bool& bSuccess = false);
+    static float GetFloatTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, float DefaultValue = 0.0f, UObject* Context = nullptr);
     
     /**
      * Set a float value for the given tag
@@ -104,6 +106,29 @@ public:
     static bool SetFloatTagValue(const UObject* WorldContextObject, FGameplayTag Tag, float Value, FName RepositoryName = NAME_None);
     
     /**
+     * Get a string value for the given tag
+     * @param WorldContextObject World context object
+     * @param Tag The tag to get the value for
+     * @param DefaultValue The default value to return if the tag is not found
+     * @param Context Optional context object that implements UTagValueInterface
+     * @param bSuccess Output parameter indicating if the tag had a valid value
+     * @return The string value associated with the tag, or DefaultValue if not found
+     */
+    UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
+    static FString GetStringTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, const FString& DefaultValue = "", UObject* Context = nullptr);
+    
+    /**
+     * Set a string value for the given tag
+     * @param WorldContextObject World context object
+     * @param Tag The tag to set the value for
+     * @param Value The value to set
+     * @param RepositoryName Optional repository name to target (uses default if not specified)
+     * @return True if the value was set successfully
+     */
+    UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
+    static bool SetStringTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FString& Value, FName RepositoryName = NAME_None);
+    
+    /**
      * Get a transform value for the given tag
      * @param WorldContextObject World context object
      * @param Tag The tag to get the value for
@@ -113,7 +138,7 @@ public:
      * @return The transform value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static FTransform GetTransformTagValue(const UObject* WorldContextObject, FGameplayTag Tag, const FTransform& DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
+    static FTransform GetTransformTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, const FTransform& DefaultValue, UObject* Context = nullptr);
     
     /**
      * Set a transform value for the given tag
@@ -136,7 +161,7 @@ public:
      * @return The class value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static TSoftClassPtr<UObject> GetClassTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
+    static TSoftClassPtr<UObject> GetClassTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, TSoftClassPtr<UObject> DefaultValue, UObject* Context = nullptr);
     
     /**
      * Set a class value for the given tag
@@ -159,7 +184,7 @@ public:
      * @return The object value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintPure, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static TSoftObjectPtr<UObject> GetObjectTagValue(const UObject* WorldContextObject, FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue, UObject* Context = nullptr, bool& bSuccess = false);
+    static TSoftObjectPtr<UObject> GetObjectTagValue(const UObject* WorldContextObject, FGameplayTag Tag, bool& bSuccess, TSoftObjectPtr<UObject> DefaultValue, UObject* Context = nullptr);
     
     /**
      * Set an object value for the given tag
@@ -183,10 +208,11 @@ public:
     static bool RemoveTagValue(const UObject* WorldContextObject, FGameplayTag Tag, FName RepositoryName = NAME_None);
     
     /**
-     * Clear all values in all repositories or a specific repository
+     * Clear all values for the specified repository
      * @param WorldContextObject World context object
-     * @param RepositoryName Optional repository name to target (clears all if not specified)
+     * @param RepositoryName The repository name to clear (clears all if not specified)
+     * @return True if values were cleared successfully
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values", meta = (WorldContext = "WorldContextObject"))
-    static void ClearAllTagValues(const UObject* WorldContextObject, FName RepositoryName = NAME_None);
+    static bool ClearAllTagValues(const UObject* WorldContextObject, FName RepositoryName = NAME_None);
 };

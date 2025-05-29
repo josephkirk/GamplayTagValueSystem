@@ -1,3 +1,4 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #include "GameplayTagValueDataAsset.h"
 #include "GameplayTagValueSubsystem.h"
 #include "Kismet/GameplayStatics.h"
@@ -7,7 +8,7 @@ void UGameplayTagValueDataAsset::PostLoad()
     Super::PostLoad();
     
     // Auto-register to the subsystem if configured to do so
-    if (bRegisterToGameplayTagValueSubsystem)
+    if (bAutoRegister)
     {
         // We need to use a delay here because the GameInstance might not be fully initialized yet
         // This is handled by the GameplayTagValueSubsystem itself during initialization
@@ -36,7 +37,58 @@ int32 UGameplayTagValueDataAsset::RegisterToSubsystem(UGameplayTagValueSubsystem
         {
             if (DataTable)
             {
-                TotalImported += Subsystem->ImportFromDataTable(DataTable, RepositoryName);
+                // Go through each row in the table and register its value
+                int32 ImportedCount = 0;
+                
+                for (const auto& Pair : DataTable->GetRowMap())
+                {
+                    FName RowName = Pair.Key;
+                    FTagValueDataTableRow* Row = reinterpret_cast<FTagValueDataTableRow*>(Pair.Value);
+                    
+                    if (Row && Row->Tag.IsValid())
+                    {
+                        // Create the appropriate tag value based on the row's type
+                        TSharedPtr<FBaseTagValue> TagValue = Row->CreateTagValue();
+                        
+                        if (TagValue.IsValid())
+                        {
+                            // Create a tag value holder and register it with the appropriate type
+                            bool bSuccess = false;
+                            
+                            switch (Row->ValueType)
+                            {
+                            case ETagValueType::Bool:
+                                bSuccess = Subsystem->SetBoolValue(Row->Tag, Row->BoolValue, RepositoryName);
+                                break;
+                            case ETagValueType::Int:
+                                bSuccess = Subsystem->SetIntValue(Row->Tag, Row->IntValue, RepositoryName);
+                                break;
+                            case ETagValueType::Float:
+                                bSuccess = Subsystem->SetFloatValue(Row->Tag, Row->FloatValue, RepositoryName);
+                                break;
+                            case ETagValueType::String:
+                                bSuccess = Subsystem->SetStringValue(Row->Tag, Row->StringValue, RepositoryName);
+                                break;
+                            case ETagValueType::Transform:
+                                bSuccess = Subsystem->SetTransformValue(Row->Tag, Row->TransformValue, RepositoryName);
+                                break;
+                            case ETagValueType::Class:
+                                bSuccess = Subsystem->SetClassValue(Row->Tag, Row->ClassValue, RepositoryName);
+                                break;
+                            case ETagValueType::Object:
+                                bSuccess = Subsystem->SetObjectValue(Row->Tag, Row->ObjectValue, RepositoryName);
+                                break;
+                            }
+                            
+                            if (bSuccess)
+                            {
+                                ImportedCount++;
+                            }
+                        }
+                    }
+                }
+                
+                TotalImported += ImportedCount;
             }
         }
     }
@@ -75,11 +127,11 @@ void UGameplayTagValueDataAsset::UnregisterFromSubsystem(UGameplayTagValueSubsys
                     TArray<FName> RowNames = DataTable->GetRowNames();
                     for (const FName& RowName : RowNames)
                     {
-                        FTagValueMapping* Mapping = DataTable->FindRow<FTagValueMapping>(RowName, TEXT(""));
-                        if (Mapping && Mapping->Tag.IsValid())
+                        FTagValueDataTableRow* Row = DataTable->FindRow<FTagValueDataTableRow>(RowName, TEXT(""));
+                        if (Row && Row->Tag.IsValid())
                         {
                             // Remove this specific tag value
-                            Subsystem->RemoveTagValue(Mapping->Tag, RepositoryName);
+                            Subsystem->RemoveTagValue(Row->Tag, RepositoryName);
                         }
                     }
                 }
@@ -99,10 +151,10 @@ EDataValidationResult UGameplayTagValueDataAsset::IsDataValid(TArray<FText>& Val
         UDataTable* DataTable = DataTables[Index];
         if (DataTable)
         {
-            UScriptStruct* RowStruct = DataTable->GetRowStruct();
-            if (!RowStruct || RowStruct->GetFName() != FTagValueMapping::StaticStruct()->GetFName())
+            const UScriptStruct* RowStruct = DataTable->GetRowStruct();
+            if (!RowStruct || RowStruct->GetFName() != FTagValueDataTableRow::StaticStruct()->GetFName())
             {
-                ValidationErrors.Add(FText::Format(FText::FromString(TEXT("Data table at index {0} does not use FTagValueMapping as its row structure")), FText::AsNumber(Index)));
+                ValidationErrors.Add(FText::Format(FText::FromString(TEXT("Data table at index {0} does not use FTagValueDataTableRow as its row structure")), FText::AsNumber(Index)));
                 Result = EDataValidationResult::Invalid;
             }
         }

@@ -1,3 +1,4 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
 #include "TagValueRepositoryComponent.h"
 #include "GameplayTagValueSubsystem.h"
 #include "Kismet/GameplayStatics.h"
@@ -75,27 +76,17 @@ void UTagValueRepositoryComponent::UnregisterFromSubsystem()
 // ITagValueRepository interface implementation
 bool UTagValueRepositoryComponent::HasValue(FGameplayTag Tag) const
 {
-	// Check if the tag exists in our mappings
-	for (const FTagValueMapping& Mapping : TagValueMappings)
-	{
-		if (Mapping.Tag == Tag)
-		{
-			return true;
-		}
-	}
-	return false;
+	return TagValueContainer.HasValue(Tag);
 }
 
 TSharedPtr<ITagValueHolder> UTagValueRepositoryComponent::GetValue(FGameplayTag Tag) const
 {
-	// Find the tag in our mappings
-	for (const FTagValueMapping& Mapping : TagValueMappings)
+	if (TagValueContainer.HasValue(Tag))
 	{
-		if (Mapping.Tag == Tag)
-		{
-			// Convert the FTagValue to an ITagValueHolder
-			return ConvertTagValueToHolder(Mapping.Value);
-		}
+		// Find the tag in our container
+		const FBaseTagValue BaseValue = TagValueContainer.FindValue(Tag);
+			// Convert the FBaseTagValue to an ITagValueHolder
+		return ConvertTagValueToHolder(BaseValue);
 	}
 	return nullptr;
 }
@@ -109,33 +100,27 @@ void UTagValueRepositoryComponent::SetValue(FGameplayTag Tag, TSharedPtr<ITagVal
 		return;
 	}
 
-	// Convert the ITagValueHolder to an FTagValue
-	FTagValue TagValue;
-	if (ConvertHolderToTagValue(Value, TagValue))
+	// Convert the ITagValueHolder to an FBaseTagValue and add to container
+	TSharedPtr<FBaseTagValue> TagValue = ConvertHolderToTagValue(Value);
+	if (TagValue.IsValid())
 	{
-		// Update or add the mapping
-		SetTagValueMapping(Tag, TagValue);
+		TagValueContainer.Values.Add(Tag, TagValue);
 	}
 }
 
 void UTagValueRepositoryComponent::RemoveValue(FGameplayTag Tag)
 {
-	RemoveTagValueMapping(Tag);
+	TagValueContainer.RemoveValue(Tag);
 }
 
 void UTagValueRepositoryComponent::ClearAllValues()
 {
-	ClearTagValueMappings();
+	TagValueContainer.Clear();
 }
 
 TArray<FGameplayTag> UTagValueRepositoryComponent::GetAllTags() const
 {
-	TArray<FGameplayTag> Tags;
-	for (const FTagValueMapping& Mapping : TagValueMappings)
-	{
-		Tags.Add(Mapping.Tag);
-	}
-	return Tags;
+	return TagValueContainer.GetAllTags();
 }
 
 FName UTagValueRepositoryComponent::GetRepositoryName() const
@@ -148,103 +133,158 @@ int32 UTagValueRepositoryComponent::GetPriority() const
 	return Priority;
 }
 
-void UTagValueRepositoryComponent::SetTagValueMapping(FGameplayTag InTag, FTagValue InValue)
+void UTagValueRepositoryComponent::SetBoolTagValue(FGameplayTag InTag, bool InValue)
 {
-	// Check if the tag already exists
-	for (int32 i = 0; i < TagValueMappings.Num(); ++i)
+	TagValueContainer.SetValue<FBoolTagValue>(InTag, FBoolTagValue(InValue));
+}
+
+void UTagValueRepositoryComponent::SetIntTagValue(FGameplayTag InTag, int32 InValue)
+{
+	TagValueContainer.SetValue<FIntTagValue>(InTag, FIntTagValue(InValue));
+}
+
+void UTagValueRepositoryComponent::SetFloatTagValue(FGameplayTag InTag, float InValue)
+{
+	TagValueContainer.SetValue<FFloatTagValue>(InTag, FFloatTagValue(InValue));
+}
+
+void UTagValueRepositoryComponent::SetStringTagValue(FGameplayTag InTag, const FString& InValue)
+{
+	TagValueContainer.SetValue<FStringTagValue>(InTag, FStringTagValue(InValue));
+}
+
+void UTagValueRepositoryComponent::SetTransformTagValue(FGameplayTag InTag, const FTransform& InValue)
+{
+	TagValueContainer.SetValue<FTransformTagValue>(InTag, FTransformTagValue(InValue));
+}
+
+void UTagValueRepositoryComponent::SetClassTagValue(FGameplayTag InTag, TSoftClassPtr<UObject> InValue)
+{
+	TagValueContainer.SetValue<FClassTagValue>(InTag, FClassTagValue(InValue));
+}
+
+void UTagValueRepositoryComponent::SetObjectTagValue(FGameplayTag InTag, TSoftObjectPtr<UObject> InValue)
+{
+	TagValueContainer.SetValue<FObjectTagValue>(InTag, FObjectTagValue(InValue));
+}
+
+void UTagValueRepositoryComponent::RemoveTagValue(FGameplayTag InTag)
+{
+	TagValueContainer.RemoveValue(InTag);
+}
+
+void UTagValueRepositoryComponent::ClearTagValues()
+{
+	TagValueContainer.Clear();
+}
+
+TSharedPtr<ITagValueHolder> UTagValueRepositoryComponent::ConvertTagValueToHolder(const FBaseTagValue& Value) const
+{
+
+	// Get the type name to determine which holder to create
+	FName TypeName = Value.GetValueType();
+
+	// Create the appropriate holder based on the type
+	if (TypeName == FName("Bool"))
 	{
-		if (TagValueMappings[i].Tag == InTag)
-		{
-			// Update the existing mapping
-			TagValueMappings[i].Value = InValue;
-			return;
-		}
+		FBoolTagValue TypedValue = Value.TryCast<FBoolTagValue>();
+		return MakeShared<TTagValueHolder<bool>>(TypedValue.Value);
+	}
+	else if (TypeName == FName("Int"))
+	{
+		FIntTagValue TypedValue = Value.TryCast<FIntTagValue>();
+		return MakeShared<TTagValueHolder<int32>>(TypedValue.Value);
+	}
+	else if (TypeName == FName("Float"))
+	{
+		FFloatTagValue TypedValue = Value.TryCast<FFloatTagValue>();
+		return MakeShared<TTagValueHolder<float>>(TypedValue.Value);
+	}
+	else if (TypeName == FName("String"))
+	{
+		FStringTagValue TypedValue = Value.TryCast<FStringTagValue>();
+		return MakeShared<TTagValueHolder<FString>>(TypedValue.Value);
+	}
+	else if (TypeName == FName("Transform"))
+	{
+		FTransformTagValue TypedValue = Value.TryCast<FTransformTagValue>();
+		return MakeShared<TTagValueHolder<FTransform>>(TypedValue.Value);
+	}
+	else if (TypeName == FName("Class"))
+	{
+		FClassTagValue TypedValue = Value.TryCast<FClassTagValue>();
+		return MakeShared<TTagValueHolder<TSoftClassPtr<UObject>>>(TypedValue.Value);
+	}
+	else if (TypeName == FName("Object"))
+	{
+		FObjectTagValue TypedValue = Value.TryCast<FObjectTagValue>();
+		return MakeShared<TTagValueHolder<TSoftObjectPtr<UObject>>>(TypedValue.Value);
 	}
 
-	// Add a new mapping
-	FTagValueMapping NewMapping;
-	NewMapping.Tag = InTag;
-	NewMapping.Value = InValue;
-	TagValueMappings.Add(NewMapping);
+	return nullptr;
 }
 
-void UTagValueRepositoryComponent::RemoveTagValueMapping(FGameplayTag InTag)
-{
-	// Find and remove the mapping
-	for (int32 i = 0; i < TagValueMappings.Num(); ++i)
-	{
-		if (TagValueMappings[i].Tag == InTag)
-		{
-			TagValueMappings.RemoveAt(i);
-			break;
-		}
-	}
-}
-
-void UTagValueRepositoryComponent::ClearTagValueMappings()
-{
-	TagValueMappings.Empty();
-}
-
-TSharedPtr<ITagValueHolder> UTagValueRepositoryComponent::ConvertTagValueToHolder(const FTagValue& Value) const
-{
-	// Create a new holder for the appropriate type
-	// This is a simple implementation that just uses the bool value
-	// A more complete implementation would check which field is set and use that
-	return MakeShared<TTagValueHolder<bool>>(Value.BoolValue);
-
-	// For a more complete implementation, you would need to determine which value is actually set
-	// and create the appropriate holder type. This might involve additional metadata in FTagValue
-	// to indicate which field is the active one.
-}
-
-bool UTagValueRepositoryComponent::ConvertHolderToTagValue(const TSharedPtr<ITagValueHolder>& Holder, FTagValue& OutValue) const
+TSharedPtr<FBaseTagValue> UTagValueRepositoryComponent::ConvertHolderToTagValue(const TSharedPtr<ITagValueHolder>& Holder) const
 {
 	if (!Holder || !Holder->IsValid())
 	{
-		return false;
+		return nullptr;
 	}
 
-	// Check the type of the holder and extract the appropriate value
+	// Check the type of the holder and create the appropriate tag value
 	FName TypeName = Holder->GetValueTypeName();
 
 	// Handle bool values
 	if (TypeName == TBaseStructure<bool>::Get()->GetFName())
 	{
-		OutValue.BoolValue = *static_cast<bool*>(Holder->GetValuePtr());
-		return true;
+		bool* Value = static_cast<bool*>(Holder->GetValuePtr());
+		return MakeShared<FBoolTagValue>(*Value);
 	}
 	// Handle int32 values
 	else if (TypeName == TBaseStructure<int32>::Get()->GetFName())
 	{
-		OutValue.IntegerValue = *static_cast<int32*>(Holder->GetValuePtr());
-		return true;
+		int32* Value = static_cast<int32*>(Holder->GetValuePtr());
+		return MakeShared<FIntTagValue>(*Value);
 	}
-	// Handle double/float values
+	// Handle float values
+	else if (TypeName == TBaseStructure<float>::Get()->GetFName())
+	{
+		float* Value = static_cast<float*>(Holder->GetValuePtr());
+		return MakeShared<FFloatTagValue>(*Value);
+	}
+	// Handle double values and convert to float
 	else if (TypeName == TBaseStructure<double>::Get()->GetFName())
 	{
-		OutValue.FloatValue = *static_cast<double*>(Holder->GetValuePtr());
-		return true;
+		double* Value = static_cast<double*>(Holder->GetValuePtr());
+		return MakeShared<FFloatTagValue>(static_cast<float>(*Value));
+	}
+	// Handle FString values
+	else if (TypeName == TBaseStructure<FString>::Get()->GetFName())
+	{
+		FString* Value = static_cast<FString*>(Holder->GetValuePtr());
+		return MakeShared<FStringTagValue>(*Value);
 	}
 	// Handle transform values
 	else if (TypeName == TBaseStructure<FTransform>::Get()->GetFName())
 	{
-		OutValue.TransformValue = *static_cast<FTransform*>(Holder->GetValuePtr());
-		return true;
+		FTransform* Value = static_cast<FTransform*>(Holder->GetValuePtr());
+		return MakeShared<FTransformTagValue>(*Value);
 	}
 	// Handle class path values
-	else if (TypeName == TBaseStructure<FSoftClassPath>::Get()->GetFName())
+	else if (TypeName == TBaseStructure<TSoftClassPtr<UObject>>::Get()->GetFName() || 
+			 TypeName == TBaseStructure<FSoftClassPath>::Get()->GetFName())
 	{
-		OutValue.ClassValue = *static_cast<FSoftClassPath*>(Holder->GetValuePtr());
-		return true;
+		auto* Value = static_cast<TSoftClassPtr<UObject>*>(Holder->GetValuePtr());
+		return MakeShared<FClassTagValue>(*Value);
 	}
 	// Handle object path values
-	else if (TypeName == TBaseStructure<FSoftObjectPath>::Get()->GetFName())
+	else if (TypeName == TBaseStructure<TSoftObjectPtr<UObject>>::Get()->GetFName() || 
+			 TypeName == TBaseStructure<FSoftObjectPath>::Get()->GetFName())
 	{
-		OutValue.ObjectValue = *static_cast<FSoftObjectPath*>(Holder->GetValuePtr());
-		return true;
+		auto* Value = static_cast<TSoftObjectPtr<UObject>*>(Holder->GetValuePtr());
+		return MakeShared<FObjectTagValue>(*Value);
 	}
 
 	// Unknown type
-	return false;
+	return nullptr;
 }

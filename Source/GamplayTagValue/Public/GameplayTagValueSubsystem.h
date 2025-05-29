@@ -1,23 +1,21 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "GameplayTags.h"
 #include "TagValueInterface.h"
-#include "TagValue.h"
+#include "TagValueBase.h"
+#include "TagValueContainer.h"
 #include "GameplayTagValueSubsystem.generated.h"
-
-// Forward declaration
-class UGameplayTagValueDataAsset;
 
 /**
  * Delegate for when a tag value changes
  * @param Tag The tag that changed
  * @param RepositoryName The repository where the change occurred
- * @param OldValue The previous value (may be null if no previous value existed)
- * @param NewValue The new value (may be null if the value was removed)
  */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnTagValueChanged, FGameplayTag, Tag, FName, RepositoryName, const TSharedPtr<ITagValueHolder>&, OldValue, const TSharedPtr<ITagValueHolder>&, NewValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTagValueChanged, FGameplayTag, Tag, FName, RepositoryName);
 
 /**
  * Memory-based repository implementation for storing tag values in memory
@@ -152,7 +150,7 @@ public:
      * @return The float value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    double GetFloatValue(FGameplayTag Tag, double DefaultValue = 0.0, UObject* Context = nullptr) const;
+    float GetFloatValue(FGameplayTag Tag, float DefaultValue = 0.0f, UObject* Context = nullptr) const;
     
     /**
      * Set a float value for the given tag
@@ -162,7 +160,27 @@ public:
      * @return True if the value was set successfully
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    bool SetFloatValue(FGameplayTag Tag, double Value, FName RepositoryName = NAME_None);
+    bool SetFloatValue(FGameplayTag Tag, float Value, FName RepositoryName = NAME_None);
+    
+    /**
+     * Get a string value for the given tag
+     * @param Tag The tag to get the value for
+     * @param DefaultValue The default value to return if the tag is not found
+     * @param Context Optional context object that implements UTagValueInterface
+     * @return The string value associated with the tag, or DefaultValue if not found
+     */
+    UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+    FString GetStringValue(FGameplayTag Tag, const FString& DefaultValue = "", UObject* Context = nullptr) const;
+    
+    /**
+     * Set a string value for the given tag
+     * @param Tag The tag to set the value for
+     * @param Value The value to set
+     * @param RepositoryName Optional repository name to target (uses default if not specified)
+     * @return True if the value was set successfully
+     */
+    UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+    bool SetStringValue(FGameplayTag Tag, const FString& Value, FName RepositoryName = NAME_None);
     
     /**
      * Get a transform value for the given tag
@@ -172,7 +190,7 @@ public:
      * @return The transform value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    FTransform GetTransformValue(FGameplayTag Tag, const FTransform& DefaultValue = FTransform::Identity, UObject* Context = nullptr) const;
+    FTransform GetTransformValue(FGameplayTag Tag, const FTransform& DefaultValue, UObject* Context = nullptr) const;
     
     /**
      * Set a transform value for the given tag
@@ -192,7 +210,7 @@ public:
      * @return The class value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    FSoftClassPath GetClassValue(FGameplayTag Tag, const FSoftClassPath& DefaultValue = FSoftClassPath(), UObject* Context = nullptr) const;
+    TSoftClassPtr<UObject> GetClassValue(FGameplayTag Tag, TSoftClassPtr<UObject> DefaultValue = nullptr, UObject* Context = nullptr) const;
     
     /**
      * Set a class value for the given tag
@@ -202,7 +220,7 @@ public:
      * @return True if the value was set successfully
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    bool SetClassValue(FGameplayTag Tag, const FSoftClassPath& Value, FName RepositoryName = NAME_None);
+    bool SetClassValue(FGameplayTag Tag, TSoftClassPtr<UObject> Value, FName RepositoryName = NAME_None);
     
     /**
      * Get an object value for the given tag
@@ -212,7 +230,7 @@ public:
      * @return The object value associated with the tag, or DefaultValue if not found
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    FSoftObjectPath GetObjectValue(FGameplayTag Tag, const FSoftObjectPath& DefaultValue = FSoftObjectPath(), UObject* Context = nullptr) const;
+    TSoftObjectPtr<UObject> GetObjectValue(FGameplayTag Tag, TSoftObjectPtr<UObject> DefaultValue = nullptr, UObject* Context = nullptr) const;
     
     /**
      * Set an object value for the given tag
@@ -222,7 +240,7 @@ public:
      * @return True if the value was set successfully
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-    bool SetObjectValue(FGameplayTag Tag, const FSoftObjectPath& Value, FName RepositoryName = NAME_None);
+    bool SetObjectValue(FGameplayTag Tag, TSoftObjectPtr<UObject> Value, FName RepositoryName = NAME_None);
     
     /**
      * Get a raw value holder for the given tag
@@ -268,7 +286,7 @@ public:
      * Import tag values from a data table
      * @param DataTable The data table to import from
      * @param RepositoryName Optional repository name to target (uses default if not specified)
-     * @return Number of tag-value pairs imported
+     * @return Number of values imported
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
     int32 ImportFromDataTable(UDataTable* DataTable, FName RepositoryName = NAME_None);
@@ -277,7 +295,7 @@ public:
      * Export tag values to a data table
      * @param DataTable The data table to export to
      * @param RepositoryName Optional repository name to target (exports from all if not specified)
-     * @return Number of tag-value pairs exported
+     * @return Number of values exported
      */
     UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
     int32 ExportToDataTable(UDataTable* DataTable, FName RepositoryName = NAME_None);
@@ -297,15 +315,14 @@ public:
      * @param OldValue The previous value (may be null if no previous value existed)
      * @param NewValue The new value (may be null if the value was removed)
      */
-    UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
     void BroadcastTagValueChanged(FGameplayTag Tag, FName RepositoryName, const TSharedPtr<ITagValueHolder>& OldValue = nullptr, const TSharedPtr<ITagValueHolder>& NewValue = nullptr);
     
 private:
     /** The default repository name */
     static const FName DefaultRepositoryName;
     
-    /** The repositories, sorted by priority */
-    TArray<TSharedPtr<ITagValueRepository>> Repositories;
+    /** Map of repository names to repositories */
+    TMap<FName, TSharedPtr<ITagValueRepository>> Repositories;
     
     /** Get the best repository for setting values */
     TSharedPtr<ITagValueRepository> GetBestRepository(FName RepositoryName = NAME_None) const;

@@ -1,3 +1,5 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
+
 #pragma once
 
 #include "CoreMinimal.h"
@@ -5,11 +7,12 @@
 #include "K2Node_CallFunction.h"
 #include "EdGraphSchema_K2.h"
 #include "GameplayTags.h"
-#include "TagValue.h"
 #include "K2Node_GameplayTagValueAction.generated.h"
 
 /**
- * Base class for K2 nodes that handle gameplay tag values in a generic way
+ * Base class for K2 nodes that handle gameplay tag values in a generic way.
+ * These nodes provide a convenient way to get and set gameplay tag values with automatic type resolution.
+ * Supported types include: Bool, Int, Float, String, Name, Vector, Rotator, Transform, Class, and Object.
  */
 UCLASS(Abstract)
 class GAMPLAYTAGVALUE_API UK2Node_GameplayTagValueAction : public UK2Node
@@ -64,21 +67,42 @@ protected:
     /** Gets the success pin name */
     virtual FName GetSuccessPinName() const { return TEXT("bSuccess"); }
     
-    /** Gets the value type from a connected pin */
+    /** 
+     * Gets the value type from a connected pin 
+     * @param Pin The pin to get the value type from
+     * @return The value type as a name (e.g., "Bool", "Int", "Float", etc.)
+     */
     FName GetValueTypeFromPin(const UEdGraphPin* Pin) const;
     
-    /** Gets the value type from a pin type */
+    /** 
+     * Gets the value type from a pin type 
+     * @param PinType The pin type to get the value type from
+     * @return The value type as a name (e.g., "Bool", "Int", "Float", etc.)
+     */
     FName GetValueTypeFromPinType(const FEdGraphPinType& PinType) const;
     
-    /** Creates a function call node for the specified function */
+    /** 
+     * Creates a function call node for the specified function 
+     * @param CompilerContext The compiler context
+     * @param SourceGraph The source graph
+     * @param FunctionName The name of the function to call
+     * @return The created function call node
+     */
     UK2Node_CallFunction* CreateFunctionCallNode(FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph, FName FunctionName) const;
     
-    /** Connects the common pins between this node and the function call node */
+    /** 
+     * Connects the common pins between this node and the function call node 
+     * @param CompilerContext The compiler context
+     * @param SourceGraph The source graph
+     * @param FunctionNode The function call node to connect pins to
+     */
     void ConnectCommonPins(FKismetCompilerContext& CompilerContext, UEdGraph* SourceGraph, UK2Node_CallFunction* FunctionNode) const;
 };
 
 /**
- * K2 node for getting a gameplay tag value in a generic way
+ * K2 node for getting a gameplay tag value in a generic way.
+ * This node automatically resolves the type based on the connected output pin.
+ * Supported types include: Bool, Int, Float, String, Name, Vector, Rotator, Transform, Class, and Object.
  */
 UCLASS()
 class GAMPLAYTAGVALUE_API UK2Node_GetGameplayTagValue : public UK2Node_GameplayTagValueAction
@@ -110,7 +134,9 @@ protected:
 };
 
 /**
- * K2 node for setting a gameplay tag value in a generic way
+ * K2 node for setting a gameplay tag value in a generic way.
+ * This node automatically resolves the type based on the connected input pin.
+ * Supported types include: Bool, Int, Float, String, Name, Vector, Rotator, Transform, Class, and Object.
  */
 UCLASS()
 class GAMPLAYTAGVALUE_API UK2Node_SetGameplayTagValue : public UK2Node_GameplayTagValueAction

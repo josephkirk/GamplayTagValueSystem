@@ -1,10 +1,13 @@
+// Copyright 2025 Nguyen Phi Hung. All Rights Reserved.
+
 #pragma once
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "GameplayTags.h"
 #include "TagValueInterface.h"
-#include "TagValue.h"
+#include "TagValueBase.h"
+#include "TagValueContainer.h"
 #include "TagValueRepositoryComponent.generated.h"
 
 /**
@@ -38,32 +41,80 @@ public:
 	// End ITagValueRepository interface
 
 	/**
-	 * Get the tag value mappings
-	 * @return Array of tag value mappings
+	 * Get the tag value container
+	 * @return The tag value container
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-	const TArray<FTagValueMapping>& GetTagValueMappings() const { return TagValueMappings; }
+	const FTagValueContainer& GetTagValueContainer() const { return TagValueContainer; }
 
 	/**
-	 * Set a tag value mapping
+	 * Set a bool tag value
 	 * @param InTag The tag to set
 	 * @param InValue The value to set
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-	void SetTagValueMapping(FGameplayTag InTag, FTagValue InValue);
+	void SetBoolTagValue(FGameplayTag InTag, bool InValue);
 
 	/**
-	 * Remove a tag value mapping
+	 * Set an int tag value
+	 * @param InTag The tag to set
+	 * @param InValue The value to set
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+	void SetIntTagValue(FGameplayTag InTag, int32 InValue);
+
+	/**
+	 * Set a float tag value
+	 * @param InTag The tag to set
+	 * @param InValue The value to set
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+	void SetFloatTagValue(FGameplayTag InTag, float InValue);
+
+	/**
+	 * Set a string tag value
+	 * @param InTag The tag to set
+	 * @param InValue The value to set
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+	void SetStringTagValue(FGameplayTag InTag, const FString& InValue);
+
+	/**
+	 * Set a transform tag value
+	 * @param InTag The tag to set
+	 * @param InValue The value to set
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+	void SetTransformTagValue(FGameplayTag InTag, const FTransform& InValue);
+
+	/**
+	 * Set a class tag value
+	 * @param InTag The tag to set
+	 * @param InValue The value to set
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+	void SetClassTagValue(FGameplayTag InTag, TSoftClassPtr<UObject> InValue);
+
+	/**
+	 * Set an object tag value
+	 * @param InTag The tag to set
+	 * @param InValue The value to set
+	 */
+	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
+	void SetObjectTagValue(FGameplayTag InTag, TSoftObjectPtr<UObject> InValue);
+
+	/**
+	 * Remove a tag value
 	 * @param InTag The tag to remove
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-	void RemoveTagValueMapping(FGameplayTag InTag);
+	void RemoveTagValue(FGameplayTag InTag);
 
 	/**
-	 * Clear all tag value mappings
+	 * Clear all tag values
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Gameplay Tags|Values")
-	void ClearTagValueMappings();
+	void ClearTagValues();
 
 	/**
 	 * Register this repository with the subsystem
@@ -78,9 +129,9 @@ public:
 	void UnregisterFromSubsystem();
 
 protected:
-	/** The tag value mappings stored in this repository */
+	/** The tag value container storing all values */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay Tags|Values")
-	TArray<FTagValueMapping> TagValueMappings;
+	FTagValueContainer TagValueContainer;
 
 	/** Whether to automatically register with the subsystem on BeginPlay */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Gameplay Tags|Values")
@@ -95,11 +146,11 @@ protected:
 	int32 Priority;
 
 private:
-	/** Helper function to convert between FTagValue and ITagValueHolder */
-	TSharedPtr<ITagValueHolder> ConvertTagValueToHolder(const FTagValue& Value) const;
+	/** Helper function to convert between FBaseTagValue and ITagValueHolder */
+	TSharedPtr<ITagValueHolder> ConvertTagValueToHolder(const FBaseTagValue& Value) const;
 
-	/** Helper function to convert between ITagValueHolder and FTagValue */
-	bool ConvertHolderToTagValue(const TSharedPtr<ITagValueHolder>& Holder, FTagValue& OutValue) const;
+	/** Helper function to convert between ITagValueHolder and appropriate tag value type */
+	TSharedPtr<FBaseTagValue> ConvertHolderToTagValue(const TSharedPtr<ITagValueHolder>& Holder) const;
 
 	/** Flag to track if we're registered with the subsystem */
 	bool bIsRegistered;

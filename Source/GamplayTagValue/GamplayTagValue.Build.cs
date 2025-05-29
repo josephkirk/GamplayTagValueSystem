@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 using UnrealBuildTool;
 
 public class GamplayTagValue : ModuleRules
@@ -26,6 +24,8 @@ public class GamplayTagValue : ModuleRules
 			new string[]
 			{
 				"Core",
+				"CoreUObject",
+				"Engine",
 				"GameplayTags",
 				"DeveloperSettings"
 				// ... add other public dependencies that you statically link with here ...
@@ -36,8 +36,6 @@ public class GamplayTagValue : ModuleRules
 		PrivateDependencyModuleNames.AddRange(
 			new string[]
 			{
-				"CoreUObject",
-				"Engine",
 				"Slate",
 				"SlateCore",
 				"InputCore",
