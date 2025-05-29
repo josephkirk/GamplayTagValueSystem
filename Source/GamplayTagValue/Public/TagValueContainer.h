@@ -41,7 +41,7 @@ struct GAMPLAYTAGVALUE_API FTagValueContainer
 		Values.Add(NewValue);
 	}
 
-	const FBaseTagValue FindValue(FGameplayTag Tag)
+	const FBaseTagValue FindValue(FGameplayTag& Tag)
 	{
 		for (const FBaseTagValue& Value : Values)
 		{

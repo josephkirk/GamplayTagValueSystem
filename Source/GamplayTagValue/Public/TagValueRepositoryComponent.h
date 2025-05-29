@@ -147,7 +147,7 @@ protected:
 
 private:
 	/** Helper function to convert between FBaseTagValue and ITagValueHolder */
-	TSharedPtr<ITagValueHolder> ConvertTagValueToHolder(TSharedPtr<FBaseTagValue> Value) const;
+	TSharedPtr<ITagValueHolder> ConvertTagValueToHolder(const FBaseTagValue& Value) const;
 
 	/** Helper function to convert between ITagValueHolder and appropriate tag value type */
 	TSharedPtr<FBaseTagValue> ConvertHolderToTagValue(const TSharedPtr<ITagValueHolder>& Holder) const;

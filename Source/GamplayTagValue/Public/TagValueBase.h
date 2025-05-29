@@ -27,11 +27,11 @@ struct GAMPLAYTAGVALUE_API FBaseTagValue
 
 	// Try to cast to a specific type
 	template<typename T>
-	const T* TryCast() const
+	const T TryCast() const
 	{
 		if (GetValueType() == T::StaticValueType())
 		{
-			return static_cast<const T*>(this);
+			return static_cast<const T>(this);
 		}
 		return nullptr;
 	}

@@ -84,12 +84,9 @@ TSharedPtr<ITagValueHolder> UTagValueRepositoryComponent::GetValue(FGameplayTag 
 	if (TagValueContainer.HasValue(Tag))
 	{
 		// Find the tag in our container
-		const TSharedPtr<FBaseTagValue>* BaseValue = TagValueContainer.Values.Find(Tag);
-		if (BaseValue && BaseValue->IsValid())
-		{
+		const FBaseTagValue BaseValue = TagValueContainer.FindValue(Tag);
 			// Convert the FBaseTagValue to an ITagValueHolder
-			return ConvertTagValueToHolder(*BaseValue);
-		}
+		return ConvertTagValueToHolder(BaseValue);
 	}
 	return nullptr;
 }
@@ -181,51 +178,47 @@ void UTagValueRepositoryComponent::ClearTagValues()
 	TagValueContainer.Clear();
 }
 
-TSharedPtr<ITagValueHolder> UTagValueRepositoryComponent::ConvertTagValueToHolder(TSharedPtr<FBaseTagValue> Value) const
+TSharedPtr<ITagValueHolder> UTagValueRepositoryComponent::ConvertTagValueToHolder(const FBaseTagValue& Value) const
 {
-	if (!Value.IsValid())
-	{
-		return nullptr;
-	}
 
 	// Get the type name to determine which holder to create
-	FName TypeName = Value->GetValueType();
+	FName TypeName = Value.GetValueType();
 
 	// Create the appropriate holder based on the type
 	if (TypeName == FName("Bool"))
 	{
-		FBoolTagValue* TypedValue = static_cast<FBoolTagValue*>(Value.Get());
-		return MakeShared<TTagValueHolder<bool>>(TypedValue->Value);
+		FBoolTagValue TypedValue = Value.TryCast<FBoolTagValue>();
+		return MakeShared<TTagValueHolder<bool>>(TypedValue.Value);
 	}
 	else if (TypeName == FName("Int"))
 	{
-		FIntTagValue* TypedValue = static_cast<FIntTagValue*>(Value.Get());
-		return MakeShared<TTagValueHolder<int32>>(TypedValue->Value);
+		FIntTagValue TypedValue = Value.TryCast<FIntTagValue>();
+		return MakeShared<TTagValueHolder<int32>>(TypedValue.Value);
 	}
 	else if (TypeName == FName("Float"))
 	{
-		FFloatTagValue* TypedValue = static_cast<FFloatTagValue*>(Value.Get());
-		return MakeShared<TTagValueHolder<float>>(TypedValue->Value);
+		FFloatTagValue TypedValue = Value.TryCast<FFloatTagValue>();
+		return MakeShared<TTagValueHolder<float>>(TypedValue.Value);
 	}
 	else if (TypeName == FName("String"))
 	{
-		FStringTagValue* TypedValue = static_cast<FStringTagValue*>(Value.Get());
-		return MakeShared<TTagValueHolder<FString>>(TypedValue->Value);
+		FStringTagValue TypedValue = Value.TryCast<FStringTagValue>();
+		return MakeShared<TTagValueHolder<FString>>(TypedValue.Value);
 	}
 	else if (TypeName == FName("Transform"))
 	{
-		FTransformTagValue* TypedValue = static_cast<FTransformTagValue*>(Value.Get());
-		return MakeShared<TTagValueHolder<FTransform>>(TypedValue->Value);
+		FTransformTagValue TypedValue = Value.TryCast<FTransformTagValue>();
+		return MakeShared<TTagValueHolder<FTransform>>(TypedValue.Value);
 	}
 	else if (TypeName == FName("Class"))
 	{
-		FClassTagValue* TypedValue = static_cast<FClassTagValue*>(Value.Get());
-		return MakeShared<TTagValueHolder<TSoftClassPtr<UObject>>>(TypedValue->Value);
+		FClassTagValue TypedValue = Value.TryCast<FClassTagValue>();
+		return MakeShared<TTagValueHolder<TSoftClassPtr<UObject>>>(TypedValue.Value);
 	}
 	else if (TypeName == FName("Object"))
 	{
-		FObjectTagValue* TypedValue = static_cast<FObjectTagValue*>(Value.Get());
-		return MakeShared<TTagValueHolder<TSoftObjectPtr<UObject>>>(TypedValue->Value);
+		FObjectTagValue TypedValue = Value.TryCast<FObjectTagValue>();
+		return MakeShared<TTagValueHolder<TSoftObjectPtr<UObject>>>(TypedValue.Value);
 	}
 
 	return nullptr;
