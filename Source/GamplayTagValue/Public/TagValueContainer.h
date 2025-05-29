@@ -41,6 +41,17 @@ struct GAMPLAYTAGVALUE_API FTagValueContainer
 		Values.Add(NewValue);
 	}
 
+	const FBaseTagValue FindValue(FGameplayTag Tag)
+	{
+		for (const FBaseTagValue& Value : Values)
+		{
+			if (Value.Tag == Tag)
+			{
+				return Value;
+			}
+		}
+		return FBaseTagValue();
+	}
 	/**
 	 * Get a value of a specific type for a gameplay tag
 	 * @param Tag - The gameplay tag to get the value for

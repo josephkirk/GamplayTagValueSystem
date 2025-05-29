@@ -318,7 +318,7 @@ void UGameplayTagValueSubsystem::ClearAllValues(FName RepositoryName)
 
 void UGameplayTagValueSubsystem::BroadcastTagValueChanged(FGameplayTag Tag, FName RepositoryName, const TSharedPtr<ITagValueHolder>& OldValue, const TSharedPtr<ITagValueHolder>& NewValue)
 {
-    OnTagValueChanged.Broadcast(Tag, RepositoryName, OldValue, NewValue);
+    OnTagValueChanged.Broadcast(Tag, RepositoryName);
 }
 
 TArray<FGameplayTag> UGameplayTagValueSubsystem::GetAllTags() const

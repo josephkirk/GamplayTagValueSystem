@@ -151,7 +151,7 @@ EDataValidationResult UGameplayTagValueDataAsset::IsDataValid(TArray<FText>& Val
         UDataTable* DataTable = DataTables[Index];
         if (DataTable)
         {
-            UScriptStruct* RowStruct = DataTable->GetRowStruct();
+            const UScriptStruct* RowStruct = DataTable->GetRowStruct();
             if (!RowStruct || RowStruct->GetFName() != FTagValueDataTableRow::StaticStruct()->GetFName())
             {
                 ValidationErrors.Add(FText::Format(FText::FromString(TEXT("Data table at index {0} does not use FTagValueDataTableRow as its row structure")), FText::AsNumber(Index)));
