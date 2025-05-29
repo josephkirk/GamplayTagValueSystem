@@ -1,3 +1,5 @@
+# **This Repo is now archived. Module move to https://github.com/josephkirk/GameplayTagExtension for continue developement**
+
 # GameplayTag Value System
 
 ## Overview
